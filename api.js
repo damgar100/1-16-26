@@ -1,5 +1,5 @@
-// Stock API - Multiple data sources with fallbacks
-// Tries: 1) Yahoo Finance via CORS proxies, 2) Generates realistic mock data
+// Stock API - Yahoo Finance via CORS proxies
+// Shows "Data unavailable" if API fails (no mock/demo data)
 
 const CORS_PROXIES = [
     (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -7,7 +7,6 @@ const CORS_PROXIES = [
 ];
 
 let currentProxyIndex = 0;
-let usesMockData = false;
 
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
 
@@ -41,7 +40,6 @@ async function refreshAllData() {
     dataStatus.failCount = 0;
     dataStatus.isLoading = true;
     dataStatus.isLive = false;
-    usesMockData = false;
     
     sp500Data.children.forEach(sector => {
         sector.children.forEach(stock => { stock.change = null; });
@@ -69,8 +67,8 @@ function updateDataStatusUI() {
         statusEl.className = 'data-status loading';
     } else if (dataStatus.isLive && dataStatus.successCount > 0) {
         const minutesAgo = Math.floor((Date.now() - dataStatus.lastUpdate) / 60000);
-        statusEl.textContent = usesMockData ? 'Demo Data' : (minutesAgo < 1 ? 'Live' : `${minutesAgo}m ago`);
-        statusEl.className = usesMockData ? 'data-status partial' : 'data-status live';
+        statusEl.textContent = minutesAgo < 1 ? 'Live' : `${minutesAgo}m ago`;
+        statusEl.className = 'data-status live';
     } else if (dataStatus.successCount > 0) {
         statusEl.textContent = `${dataStatus.successCount}/${dataStatus.totalStocks}`;
         statusEl.className = 'data-status partial';
@@ -110,60 +108,7 @@ async function fetchWithProxy(url, timeout = 8000) {
     return null;
 }
 
-// Generate realistic mock data for a stock
-function generateMockData(symbol) {
-    // Base prices for major stocks (realistic values)
-    const basePrices = {
-        'AAPL': 178, 'MSFT': 378, 'GOOGL': 141, 'AMZN': 178, 'NVDA': 495,
-        'META': 505, 'TSLA': 248, 'BRK-B': 408, 'JPM': 195, 'V': 276,
-        'UNH': 527, 'JNJ': 156, 'WMT': 165, 'MA': 457, 'PG': 159,
-        'HD': 363, 'CVX': 147, 'MRK': 126, 'ABBV': 154, 'KO': 60,
-        'PEP': 169, 'COST': 735, 'LLY': 582, 'AVGO': 1320, 'TMO': 532,
-        'MCD': 296, 'CSCO': 49, 'ACN': 348, 'ABT': 113, 'NKE': 106,
-        'DHR': 252, 'CRM': 272, 'ORCL': 118, 'VZ': 40, 'INTC': 43,
-        'CMCSA': 42, 'ADBE': 575, 'PFE': 28, 'T': 17, 'DIS': 112,
-        'WFC': 55, 'COP': 114, 'PM': 95, 'NEE': 75, 'RTX': 102,
-        'IBM': 168, 'QCOM': 169, 'GE': 163, 'HON': 203, 'SPGI': 445,
-        'CAT': 355, 'BA': 215, 'LOW': 245, 'GS': 465, 'AXP': 225,
-        'BKNG': 3780, 'SBUX': 95, 'MDLZ': 72, 'BLK': 815, 'ADI': 198,
-        'TJX': 100, 'DE': 395, 'ISRG': 385, 'GILD': 83, 'MMC': 200,
-        'SYK': 345, 'CB': 255, 'VRTX': 428, 'ADP': 245, 'LMT': 455,
-        'ELV': 515, 'CI': 335, 'BMY': 52, 'AMT': 198, 'REGN': 965,
-        'CVS': 76, 'CME': 212, 'SCHW': 72, 'SO': 72, 'DUK': 100,
-        'PLD': 132, 'EQIX': 815, 'ETN': 295, 'USB': 44, 'AON': 335,
-        'TMUS': 175, 'MO': 45, 'SLB': 48, 'ICE': 138, 'SHW': 345,
-        'APD': 295, 'EMR': 108, 'PGR': 205, 'PSA': 295, 'FCX': 42,
-        'MCK': 555, 'NFLX': 485, 'AMD': 148, 'INTU': 628, 'NOW': 705,
-        'TXN': 172, 'AMAT': 198, 'MU': 88, 'LRCX': 935, 'PANW': 295,
-        'SNPS': 515, 'KLAC': 715, 'CDNS': 275, 'MRVL': 72, 'FTNT': 75,
-        'CRWD': 285, 'DXCM': 118, 'TEAM': 225, 'WDAY': 265, 'ZS': 195,
-        'ABNB': 155, 'COIN': 185, 'DASH': 135, 'RBLX': 45, 'PLTR': 22,
-        'SPY': 478, 'QQQ': 405
-    };
-    
-    // Get base price or generate one
-    const basePrice = basePrices[symbol] || (50 + Math.random() * 200);
-    
-    // Generate random daily change between -3% and +3%
-    const changePercent = (Math.random() - 0.5) * 6;
-    const change = basePrice * (changePercent / 100);
-    const currentPrice = basePrice + change;
-    const previousClose = basePrice;
-    
-    return {
-        symbol: symbol,
-        currentPrice: currentPrice,
-        previousClose: previousClose,
-        change: change,
-        changePercent: changePercent,
-        high: currentPrice * (1 + Math.random() * 0.02),
-        low: currentPrice * (1 - Math.random() * 0.02),
-        open: previousClose * (1 + (Math.random() - 0.5) * 0.01),
-        volume: Math.floor(Math.random() * 50000000) + 1000000
-    };
-}
-
-// Fetch stock data - tries Yahoo, falls back to mock
+// Fetch stock data from Yahoo Finance
 async function fetchStockData(symbol) {
     const cacheKey = `quote_${symbol}`;
     const now = Date.now();
@@ -172,49 +117,41 @@ async function fetchStockData(symbol) {
         return apiCache.quotes[symbol];
     }
     
-    // Try Yahoo Finance first
-    if (!usesMockData) {
-        try {
-            const apiSymbol = normalizeTickerForAPI(symbol);
-            const url = `${YAHOO_CHART_URL}/${apiSymbol}?interval=1d&range=5d`;
-            const data = await fetchWithProxy(url);
+    try {
+        const apiSymbol = normalizeTickerForAPI(symbol);
+        const url = `${YAHOO_CHART_URL}/${apiSymbol}?interval=1d&range=5d`;
+        const data = await fetchWithProxy(url);
+        
+        if (data?.chart?.result?.[0]) {
+            const result = data.chart.result[0];
+            const meta = result.meta || {};
             
-            if (data?.chart?.result?.[0]) {
-                const result = data.chart.result[0];
-                const meta = result.meta || {};
+            const currentPrice = meta.regularMarketPrice || meta.previousClose;
+            const previousClose = meta.previousClose || meta.chartPreviousClose;
+            
+            if (currentPrice && previousClose) {
+                const stockData = {
+                    symbol: symbol,
+                    currentPrice: currentPrice,
+                    previousClose: previousClose,
+                    change: currentPrice - previousClose,
+                    changePercent: ((currentPrice - previousClose) / previousClose) * 100,
+                    high: meta.regularMarketDayHigh,
+                    low: meta.regularMarketDayLow,
+                    open: meta.regularMarketOpen,
+                    volume: meta.regularMarketVolume
+                };
                 
-                const currentPrice = meta.regularMarketPrice || meta.previousClose;
-                const previousClose = meta.previousClose || meta.chartPreviousClose;
-                
-                if (currentPrice && previousClose) {
-                    const stockData = {
-                        symbol: symbol,
-                        currentPrice: currentPrice,
-                        previousClose: previousClose,
-                        change: currentPrice - previousClose,
-                        changePercent: ((currentPrice - previousClose) / previousClose) * 100,
-                        high: meta.regularMarketDayHigh,
-                        low: meta.regularMarketDayLow,
-                        open: meta.regularMarketOpen,
-                        volume: meta.regularMarketVolume
-                    };
-                    
-                    apiCache.quotes[symbol] = stockData;
-                    apiCache.lastUpdate[cacheKey] = now;
-                    return stockData;
-                }
+                apiCache.quotes[symbol] = stockData;
+                apiCache.lastUpdate[cacheKey] = now;
+                return stockData;
             }
-        } catch (error) {
-            console.log(`Yahoo failed for ${symbol}:`, error.message);
         }
+    } catch (error) {
+        console.log(`Yahoo failed for ${symbol}:`, error.message);
     }
     
-    // Fall back to mock data
-    usesMockData = true;
-    const mockData = generateMockData(symbol);
-    apiCache.quotes[symbol] = mockData;
-    apiCache.lastUpdate[cacheKey] = now;
-    return mockData;
+    return null;
 }
 
 // Fetch chart data
@@ -268,41 +205,7 @@ async function fetchStockChart(symbol, range = '1mo') {
         console.log(`Chart fetch failed for ${symbol}:`, error.message);
     }
     
-    // Generate mock chart data
-    const mockChart = generateMockChartData(symbol, range);
-    apiCache.charts[cacheKey] = mockChart;
-    apiCache.lastUpdate[cacheKey] = now;
-    return mockChart;
-}
-
-// Generate mock chart data
-function generateMockChartData(symbol, range) {
-    const basePrice = generateMockData(symbol).currentPrice;
-    const points = range === '1d' ? 78 : range === '5d' ? 130 : range === '1mo' ? 22 : 
-                   range === '3mo' ? 66 : range === '1y' ? 252 : 260;
-    
-    const data = [];
-    let price = basePrice * 0.95;
-    const now = Date.now();
-    const interval = range === '1d' ? 5 * 60 * 1000 : 
-                     range === '5d' ? 15 * 60 * 1000 : 24 * 60 * 60 * 1000;
-    
-    for (let i = points; i >= 0; i--) {
-        const change = (Math.random() - 0.48) * price * 0.02;
-        price = Math.max(price * 0.5, price + change);
-        
-        data.push({
-            date: new Date(now - i * interval).toISOString(),
-            price: price,
-            open: price * (1 + (Math.random() - 0.5) * 0.01),
-            high: price * (1 + Math.random() * 0.01),
-            low: price * (1 - Math.random() * 0.01),
-            close: price,
-            volume: Math.floor(Math.random() * 10000000)
-        });
-    }
-    
-    return data;
+    return null;
 }
 
 // Map period to range
@@ -403,7 +306,7 @@ async function updateTreemapWithRealData() {
     dataStatus.isLive = dataStatus.successCount > 0;
     updateDataStatusUI();
     
-    console.log(`Done: ${dataStatus.successCount} loaded, ${dataStatus.failCount} failed, mock=${usesMockData}`);
+    console.log(`Done: ${dataStatus.successCount} loaded, ${dataStatus.failCount} failed`);
 }
 
 // Update index trackers
