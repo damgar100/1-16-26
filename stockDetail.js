@@ -76,13 +76,36 @@ function initSearch() {
 }
 
 // Open stock panel
-function openStockPanel(ticker) {
-    const stock = stockDetails[ticker];
+async function openStockPanel(ticker) {
     const panel = document.getElementById('stock-panel');
     const mainContent = document.querySelector('.main-content');
     
+    // Show panel immediately with loading state
+    panel.classList.add('visible');
+    mainContent.classList.add('panel-open');
+    
+    // Show loading state
+    document.querySelector('.stock-ticker').textContent = ticker;
+    document.querySelector('.stock-name-full').textContent = 'Loading...';
+    document.querySelector('.price-value').textContent = '...';
+    document.querySelector('.price-change').textContent = '';
+    
+    // Try to fetch real data from API
+    let stock = null;
+    
+    try {
+        stock = await updateStockFromAPI(ticker);
+    } catch (error) {
+        console.error('Error fetching stock data:', error);
+    }
+    
+    // Fall back to cached data if API fails
     if (!stock) {
-        // Find stock in sp500Data for basic info
+        stock = stockDetails[ticker];
+    }
+    
+    // If still no data, try to find basic info
+    if (!stock) {
         let basicStock = null;
         let sectorName = '';
         sp500Data.children.forEach(sector => {
@@ -95,9 +118,21 @@ function openStockPanel(ticker) {
         });
         
         if (basicStock) {
-            alert(`Detailed data for ${ticker} (${basicStock.name}) is not available yet.`);
+            // Create minimal stock object from basic data
+            stock = {
+                ticker: basicStock.ticker,
+                name: basicStock.name,
+                sector: sectorName,
+                currentPrice: basicStock.currentPrice || 0,
+                change: basicStock.change || 0,
+                changePercent: basicStock.change || 0,
+                marketCap: basicStock.marketCap * 1000000000,
+                priceHistory: {}
+            };
+        } else {
+            document.querySelector('.stock-name-full').textContent = 'Data not available';
+            return;
         }
-        return;
     }
     
     currentStock = stock;
@@ -105,23 +140,33 @@ function openStockPanel(ticker) {
     
     // Update panel content
     document.querySelector('.stock-ticker').textContent = stock.ticker;
-    document.querySelector('.stock-sector').textContent = stock.sector;
+    document.querySelector('.stock-sector').textContent = stock.sector || 'Unknown';
     document.querySelector('.stock-name-full').textContent = stock.name;
     
     // Price section
     const priceChange = document.querySelector('.price-change');
-    const changeSign = stock.change >= 0 ? '+' : '';
-    document.querySelector('.price-value').textContent = `$${stock.currentPrice.toFixed(2)}`;
-    priceChange.textContent = `${changeSign}${stock.change.toFixed(2)} (${changeSign}${stock.changePercent.toFixed(2)}%)`;
-    priceChange.className = `price-change ${stock.change >= 0 ? 'positive' : 'negative'}`;
+    const price = stock.currentPrice || 0;
+    const change = stock.change || 0;
+    const changePercent = stock.changePercent || 0;
+    const changeSign = change >= 0 ? '+' : '';
+    document.querySelector('.price-value').textContent = `$${price.toFixed(2)}`;
+    priceChange.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+    priceChange.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
     
-    // After hours
-    if (stock.afterHoursPrice) {
-        const ahChangeSign = stock.afterHoursChange >= 0 ? '+' : '';
+    // After hours / Pre-market
+    const priceDetails = document.querySelector('.price-details');
+    if (stock.afterHoursPrice && stock.afterHoursPrice > 0) {
+        const ahChangeSign = (stock.afterHoursChange || 0) >= 0 ? '+' : '';
         document.querySelector('.ah-price').textContent = `$${stock.afterHoursPrice.toFixed(2)}`;
         const ahChange = document.querySelector('.ah-change');
-        ahChange.textContent = `${ahChangeSign}${stock.afterHoursChange.toFixed(2)} (${ahChangeSign}${stock.afterHoursPercent.toFixed(2)}%)`;
-        ahChange.className = `ah-change ${stock.afterHoursChange >= 0 ? 'positive' : 'negative'}`;
+        ahChange.textContent = `${ahChangeSign}${(stock.afterHoursChange || 0).toFixed(2)} (${ahChangeSign}${(stock.afterHoursPercent || 0).toFixed(2)}%)`;
+        ahChange.className = `ah-change ${(stock.afterHoursChange || 0) >= 0 ? 'positive' : 'negative'}`;
+        priceDetails.style.display = 'block';
+    } else if (stock.preMarketPrice && stock.preMarketPrice > 0) {
+        document.querySelector('.price-detail').innerHTML = `Pre-Market: <span class="ah-price">$${stock.preMarketPrice.toFixed(2)}</span> <span class="ah-change ${(stock.preMarketChange || 0) >= 0 ? 'positive' : 'negative'}">${(stock.preMarketChange || 0) >= 0 ? '+' : ''}${(stock.preMarketChange || 0).toFixed(2)} (${(stock.preMarketPercent || 0) >= 0 ? '+' : ''}${(stock.preMarketPercent || 0).toFixed(2)}%)</span>`;
+        priceDetails.style.display = 'block';
+    } else {
+        priceDetails.style.display = 'none';
     }
     
     // Update all metrics
@@ -135,12 +180,8 @@ function openStockPanel(ticker) {
         }
     });
     
-    // Draw chart
-    drawChart(stock, '1M');
-    
-    // Show panel
-    panel.classList.add('visible');
-    mainContent.classList.add('panel-open');
+    // Fetch and draw chart with real data
+    await loadAndDrawChart(stock.ticker, '1M');
     
     // Resize treemap after animation
     setTimeout(() => {
@@ -166,71 +207,109 @@ function closeStockPanel() {
     }, 350);
 }
 
+// Load chart data from API and draw
+async function loadAndDrawChart(ticker, period) {
+    const chartContainer = document.getElementById('stock-chart');
+    
+    // Show loading state
+    chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;">Loading chart...</div>';
+    
+    try {
+        const chartData = await fetchChartForPeriod(ticker, period);
+        
+        if (chartData && chartData.length > 0) {
+            // Store in currentStock for redrawing
+            if (currentStock) {
+                if (!currentStock.priceHistory) currentStock.priceHistory = {};
+                currentStock.priceHistory[period] = chartData;
+            }
+            drawChartFromData(chartData, period);
+        } else {
+            // Fall back to stored data if available
+            if (currentStock && currentStock.priceHistory && currentStock.priceHistory[period]) {
+                drawChartFromData(currentStock.priceHistory[period], period);
+            } else {
+                chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;">Chart data unavailable</div>';
+            }
+        }
+    } catch (error) {
+        console.error('Error loading chart:', error);
+        // Fall back to stored data
+        if (currentStock && currentStock.priceHistory && currentStock.priceHistory[period]) {
+            drawChartFromData(currentStock.priceHistory[period], period);
+        } else {
+            chartContainer.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;">Chart data unavailable</div>';
+        }
+    }
+}
+
 // Update all metrics display
 function updateAllMetrics(stock) {
-    // Today's Trading
-    setMetric('metric-open', `$${stock.open.toFixed(2)}`);
-    setMetric('metric-high', `$${stock.high.toFixed(2)}`);
-    setMetric('metric-low', `$${stock.low.toFixed(2)}`);
-    setMetric('metric-prevclose', `$${(stock.prevClose || stock.currentPrice - stock.change).toFixed(2)}`);
-    setMetric('metric-volume', formatVolume(stock.volume));
-    setMetric('metric-avgvol', formatVolume(stock.avgVolume));
+    // Today's Trading - with null checks
+    setMetric('metric-open', stock.open ? `$${stock.open.toFixed(2)}` : 'N/A');
+    setMetric('metric-high', stock.high ? `$${stock.high.toFixed(2)}` : 'N/A');
+    setMetric('metric-low', stock.low ? `$${stock.low.toFixed(2)}` : 'N/A');
+    setMetric('metric-prevclose', stock.prevClose ? `$${stock.prevClose.toFixed(2)}` : (stock.currentPrice && stock.change ? `$${(stock.currentPrice - stock.change).toFixed(2)}` : 'N/A'));
+    setMetric('metric-volume', stock.volume ? formatVolume(stock.volume) : 'N/A');
+    setMetric('metric-avgvol', stock.avgVolume ? formatVolume(stock.avgVolume) : 'N/A');
     
     // 52 Week Range
-    setMetric('metric-52low', `$${stock.week52Low.toFixed(2)}`);
-    setMetric('metric-52high', `$${stock.week52High.toFixed(2)}`);
-    update52WeekRange(stock);
+    setMetric('metric-52low', stock.week52Low ? `$${stock.week52Low.toFixed(2)}` : 'N/A');
+    setMetric('metric-52high', stock.week52High ? `$${stock.week52High.toFixed(2)}` : 'N/A');
+    if (stock.week52Low && stock.week52High && stock.currentPrice) {
+        update52WeekRange(stock);
+    }
     
     // Valuation
-    setMetric('metric-marketcap', formatLargeNumber(stock.marketCap));
-    setMetric('metric-ev', formatLargeNumber(stock.enterpriseValue || stock.marketCap * 1.02));
-    setMetric('metric-pe', stock.pe.toFixed(2));
-    setMetric('metric-forwardpe', (stock.forwardPe || stock.pe * 0.9).toFixed(2));
-    setMetric('metric-peg', (stock.peg || 2.0).toFixed(2));
-    setMetric('metric-ps', (stock.priceToSales || 5.0).toFixed(2));
-    setMetric('metric-pb', (stock.priceToBook || 10.0).toFixed(2));
-    setMetric('metric-evebitda', (stock.evToEbitda || 15.0).toFixed(2));
+    setMetric('metric-marketcap', stock.marketCap ? formatLargeNumber(stock.marketCap) : 'N/A');
+    setMetric('metric-ev', stock.enterpriseValue ? formatLargeNumber(stock.enterpriseValue) : (stock.marketCap ? formatLargeNumber(stock.marketCap * 1.02) : 'N/A'));
+    setMetric('metric-pe', stock.pe ? stock.pe.toFixed(2) : 'N/A');
+    setMetric('metric-forwardpe', stock.forwardPe ? stock.forwardPe.toFixed(2) : 'N/A');
+    setMetric('metric-peg', stock.peg ? stock.peg.toFixed(2) : 'N/A');
+    setMetric('metric-ps', stock.priceToSales ? stock.priceToSales.toFixed(2) : 'N/A');
+    setMetric('metric-pb', stock.priceToBook ? stock.priceToBook.toFixed(2) : 'N/A');
+    setMetric('metric-evebitda', stock.evToEbitda ? stock.evToEbitda.toFixed(2) : 'N/A');
     
     // Financials
-    setMetric('metric-revenue', formatLargeNumber(stock.revenue));
-    setMetric('metric-revgrowth', formatGrowth(stock.revenueGrowth || 5.0));
-    setMetric('metric-grossprofit', formatLargeNumber(stock.grossProfit || stock.revenue * 0.4));
-    setMetric('metric-grossmargin', `${(stock.grossMargin || 40).toFixed(1)}%`);
-    setMetric('metric-opincome', formatLargeNumber(stock.operatingIncome || stock.netIncome * 1.2));
-    setMetric('metric-opmargin', `${(stock.operatingMargin || stock.profitMargin * 1.2).toFixed(1)}%`);
-    setMetric('metric-netincome', formatLargeNumber(stock.netIncome));
-    setMetric('metric-margin', `${stock.profitMargin.toFixed(1)}%`);
+    setMetric('metric-revenue', stock.revenue ? formatLargeNumber(stock.revenue) : 'N/A');
+    setMetric('metric-revgrowth', stock.revenueGrowth ? formatGrowthValue(stock.revenueGrowth) : 'N/A');
+    setMetric('metric-grossprofit', stock.grossProfit ? formatLargeNumber(stock.grossProfit) : 'N/A');
+    setMetric('metric-grossmargin', stock.grossMargin ? `${stock.grossMargin.toFixed(1)}%` : 'N/A');
+    setMetric('metric-opincome', stock.operatingIncome ? formatLargeNumber(stock.operatingIncome) : 'N/A');
+    setMetric('metric-opmargin', stock.operatingMargin ? `${stock.operatingMargin.toFixed(1)}%` : 'N/A');
+    setMetric('metric-netincome', stock.netIncome ? formatLargeNumber(stock.netIncome) : 'N/A');
+    setMetric('metric-margin', stock.profitMargin ? `${stock.profitMargin.toFixed(1)}%` : 'N/A');
     
     // Per Share Data
-    setMetric('metric-eps', `$${stock.eps.toFixed(2)}`);
-    setMetric('metric-epsgrowth', formatGrowth(stock.epsGrowth || 8.0));
-    setMetric('metric-bookvalue', `$${(stock.bookValue || stock.currentPrice / 10).toFixed(2)}`);
-    setMetric('metric-cashpershare', `$${(stock.cashPerShare || stock.currentPrice * 0.02).toFixed(2)}`);
+    setMetric('metric-eps', stock.eps ? `$${stock.eps.toFixed(2)}` : 'N/A');
+    setMetric('metric-epsgrowth', stock.epsGrowth ? formatGrowthValue(stock.epsGrowth) : 'N/A');
+    setMetric('metric-bookvalue', stock.bookValue ? `$${stock.bookValue.toFixed(2)}` : 'N/A');
+    setMetric('metric-cashpershare', stock.cashPerShare ? `$${stock.cashPerShare.toFixed(2)}` : 'N/A');
     
     // Dividends & Returns
-    setMetric('metric-divannual', stock.divYield > 0 ? `$${(stock.divAnnual || stock.currentPrice * stock.divYield / 100).toFixed(2)}` : 'N/A');
-    setMetric('metric-divyield', stock.divYield > 0 ? `${stock.divYield.toFixed(2)}%` : 'N/A');
-    setMetric('metric-payout', stock.divYield > 0 ? `${(stock.payoutRatio || 20).toFixed(1)}%` : 'N/A');
+    setMetric('metric-divannual', stock.divAnnual ? `$${stock.divAnnual.toFixed(2)}` : 'N/A');
+    setMetric('metric-divyield', stock.divYield ? `${stock.divYield.toFixed(2)}%` : 'N/A');
+    setMetric('metric-payout', stock.payoutRatio ? `${stock.payoutRatio.toFixed(1)}%` : 'N/A');
     setMetric('metric-exdiv', stock.exDivDate || 'N/A');
-    setMetric('metric-roe', `${stock.roe.toFixed(1)}%`);
-    setMetric('metric-roa', `${(stock.roa || stock.roe / 5).toFixed(1)}%`);
-    setMetric('metric-roic', `${(stock.roic || stock.roe / 3).toFixed(1)}%`);
+    setMetric('metric-roe', stock.roe ? `${stock.roe.toFixed(1)}%` : 'N/A');
+    setMetric('metric-roa', stock.roa ? `${stock.roa.toFixed(1)}%` : 'N/A');
+    setMetric('metric-roic', stock.roic ? `${stock.roic.toFixed(1)}%` : 'N/A');
     
     // Balance Sheet
-    setMetric('metric-cash', formatLargeNumber(stock.totalCash || stock.marketCap * 0.02));
-    setMetric('metric-debt', formatLargeNumber(stock.totalDebt || stock.marketCap * 0.03));
-    setMetric('metric-netdebt', formatLargeNumber(stock.netDebt || stock.marketCap * 0.01));
-    setMetric('metric-debtequity', (stock.debtToEquity || 1.5).toFixed(2));
-    setMetric('metric-currentratio', (stock.currentRatio || 1.2).toFixed(2));
-    setMetric('metric-quickratio', (stock.quickRatio || 1.0).toFixed(2));
+    setMetric('metric-cash', stock.totalCash ? formatLargeNumber(stock.totalCash) : 'N/A');
+    setMetric('metric-debt', stock.totalDebt ? formatLargeNumber(stock.totalDebt) : 'N/A');
+    setMetric('metric-netdebt', stock.netDebt ? formatLargeNumber(stock.netDebt) : 'N/A');
+    setMetric('metric-debtequity', stock.debtToEquity ? stock.debtToEquity.toFixed(2) : 'N/A');
+    setMetric('metric-currentratio', stock.currentRatio ? stock.currentRatio.toFixed(2) : 'N/A');
+    setMetric('metric-quickratio', stock.quickRatio ? stock.quickRatio.toFixed(2) : 'N/A');
     
     // Trading Information
-    setMetric('metric-beta', stock.beta.toFixed(2));
-    setMetric('metric-sharesout', formatVolume(stock.sharesOutstanding || stock.marketCap / stock.currentPrice));
-    setMetric('metric-float', formatVolume(stock.floatShares || stock.marketCap / stock.currentPrice * 0.99));
-    setMetric('metric-shortint', `${(stock.shortInterest || 1.5).toFixed(2)}%`);
-    setMetric('metric-instown', `${(stock.instOwnership || 65).toFixed(1)}%`);
-    setMetric('metric-insiderown', `${(stock.insiderOwnership || 0.5).toFixed(2)}%`);
+    setMetric('metric-beta', stock.beta ? stock.beta.toFixed(2) : 'N/A');
+    setMetric('metric-sharesout', stock.sharesOutstanding ? formatVolume(stock.sharesOutstanding) : 'N/A');
+    setMetric('metric-float', stock.floatShares ? formatVolume(stock.floatShares) : 'N/A');
+    setMetric('metric-shortint', stock.shortInterest ? `${stock.shortInterest.toFixed(2)}%` : (stock.shortRatio ? `${stock.shortRatio.toFixed(2)} days` : 'N/A'));
+    setMetric('metric-instown', stock.instOwnership ? `${stock.instOwnership.toFixed(1)}%` : 'N/A');
+    setMetric('metric-insiderown', stock.insiderOwnership ? `${stock.insiderOwnership.toFixed(2)}%` : 'N/A');
     
     // Analyst Ratings
     updateAnalystRatings(stock);
@@ -249,8 +328,7 @@ function setMetric(id, value) {
     if (el) el.textContent = value;
 }
 
-function formatGrowth(value) {
-    const el = document.getElementById('metric-revgrowth');
+function formatGrowthValue(value) {
     const sign = value >= 0 ? '+' : '';
     return `${sign}${value.toFixed(1)}%`;
 }
@@ -340,12 +418,14 @@ function formatLargeNumber(val) {
     return `$${val}`;
 }
 
-// Draw price chart
-function drawChart(stock, period) {
+// Draw price chart from data array
+function drawChartFromData(priceData, period) {
     const container = document.getElementById('stock-chart');
-    const priceData = stock.priceHistory[period];
     
-    if (!priceData || priceData.length === 0) return;
+    if (!priceData || priceData.length === 0) {
+        container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;">No chart data available</div>';
+        return;
+    }
     
     // Clear previous chart
     d3.select('#stock-chart').selectAll('*').remove();
@@ -559,13 +639,13 @@ function initPanel() {
     
     // Time selector buttons
     document.querySelectorAll('.time-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
+        btn.addEventListener('click', async function() {
             document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
             this.classList.add('active');
             currentPeriod = this.dataset.period;
             
             if (currentStock) {
-                drawChart(currentStock, currentPeriod);
+                await loadAndDrawChart(currentStock.ticker, currentPeriod);
             }
         });
     });
@@ -585,7 +665,7 @@ function makeTreemapClickable() {
             node.addEventListener('click', function(e) {
                 e.stopPropagation();
                 const ticker = this.querySelector('.ticker')?.textContent;
-                if (ticker && stockDetails[ticker]) {
+                if (ticker) {
                     openStockPanel(ticker);
                 }
             });
