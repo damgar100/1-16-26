@@ -392,8 +392,72 @@ async function updateIndexTrackers() {
     }
 }
 
+// Check if US stock market is open
+function isMarketOpen() {
+    const now = new Date();
+    
+    // Convert to Eastern Time
+    const etOptions = { timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false };
+    const etTimeStr = now.toLocaleString('en-US', etOptions);
+    const [hours, minutes] = etTimeStr.split(':').map(Number);
+    const currentMinutes = hours * 60 + minutes;
+    
+    // Market hours: 9:30 AM - 4:00 PM ET (570 - 960 minutes)
+    const marketOpen = 9 * 60 + 30;  // 9:30 AM
+    const marketClose = 16 * 60;      // 4:00 PM
+    
+    // Check if it's a weekday
+    const etDayOptions = { timeZone: 'America/New_York', weekday: 'short' };
+    const dayOfWeek = now.toLocaleString('en-US', etDayOptions);
+    const isWeekday = !['Sat', 'Sun'].includes(dayOfWeek);
+    
+    const isOpen = isWeekday && currentMinutes >= marketOpen && currentMinutes < marketClose;
+    
+    return {
+        isOpen,
+        hours,
+        minutes,
+        dayOfWeek
+    };
+}
+
+// Update raccoon and market status
+function updateRaccoon() {
+    const { isOpen } = isMarketOpen();
+    
+    const raccoonAwake = document.getElementById('raccoon-awake');
+    const raccoonAsleep = document.getElementById('raccoon-asleep');
+    const marketStatus = document.getElementById('market-status');
+    
+    if (raccoonAwake && raccoonAsleep) {
+        if (isOpen) {
+            raccoonAwake.style.display = 'block';
+            raccoonAsleep.style.display = 'none';
+        } else {
+            raccoonAwake.style.display = 'none';
+            raccoonAsleep.style.display = 'block';
+        }
+    }
+    
+    if (marketStatus) {
+        if (isOpen) {
+            marketStatus.textContent = 'Market Open';
+            marketStatus.className = 'market-status open';
+        } else {
+            marketStatus.textContent = 'Market Closed';
+            marketStatus.className = 'market-status closed';
+        }
+    }
+}
+
 // Initialize real-time data on page load
 document.addEventListener('DOMContentLoaded', function() {
+    // Update raccoon based on market hours
+    updateRaccoon();
+    
+    // Check market status every minute
+    setInterval(updateRaccoon, 60000);
+    
     // Update index trackers
     updateIndexTrackers();
     

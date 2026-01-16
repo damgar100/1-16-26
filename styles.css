@@ -24,15 +24,57 @@ body {
     text-align: left;
 }
 
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.raccoon-container {
+    position: relative;
+    width: 48px;
+    height: 48px;
+}
+
+.raccoon-awake, .raccoon-asleep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.3s ease;
+}
+
+.raccoon-container:hover .raccoon-awake svg,
+.raccoon-container:hover .raccoon-asleep svg {
+    transform: scale(1.1);
+    transition: transform 0.2s ease;
+}
+
 .header h1 {
     font-size: 24px;
     font-weight: 600;
-    margin-bottom: 5px;
 }
 
 .subtitle {
     color: #888;
     font-size: 14px;
+}
+
+.market-status {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+}
+
+.market-status.open {
+    background-color: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.market-status.closed {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
 }
 
 .index-trackers {
