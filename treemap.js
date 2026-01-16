@@ -310,6 +310,12 @@ function initKeyboardShortcuts() {
             case 'l':
                 showQuickStats('losers');
                 break;
+            case 'r':
+                // Refresh data
+                if (typeof refreshAllData === 'function') {
+                    refreshAllData();
+                }
+                break;
             case '/':
                 e.preventDefault();
                 document.getElementById('stock-search')?.focus();

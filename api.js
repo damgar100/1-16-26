@@ -3,7 +3,8 @@
 
 const CORS_PROXIES = [
     'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url='
+    'https://api.allorigins.win/raw?url=',
+    'https://api.codetabs.com/v1/proxy?quest='
 ];
 
 let currentProxyIndex = 0;
@@ -38,6 +39,46 @@ function normalizeTickerForAPI(ticker) {
 
 function normalizeTickerFromAPI(apiTicker) {
     return apiTicker.replace('.', '-');
+}
+
+// Manual refresh function (called by refresh button)
+async function refreshAllData() {
+    const refreshBtn = document.getElementById('refresh-data');
+    if (refreshBtn) {
+        refreshBtn.classList.add('spinning');
+    }
+    
+    // Clear cache to force fresh data
+    apiCache.quotes = {};
+    apiCache.lastUpdate = {};
+    
+    // Reset status
+    dataStatus.successCount = 0;
+    dataStatus.failCount = 0;
+    dataStatus.isLoading = true;
+    dataStatus.isLive = false;
+    
+    // Reset all stock changes to null
+    sp500Data.children.forEach(sector => {
+        sector.children.forEach(stock => {
+            stock.change = null;
+        });
+    });
+    
+    // Redraw treemap with loading state
+    if (typeof initTreemap === 'function') {
+        initTreemap();
+    }
+    
+    updateDataStatusUI();
+    
+    // Fetch fresh data
+    await updateIndexTrackers();
+    await updateTreemapWithRealData();
+    
+    if (refreshBtn) {
+        refreshBtn.classList.remove('spinning');
+    }
 }
 
 // Update data status UI indicator
@@ -547,6 +588,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Check market status every minute
     setInterval(updateRaccoon, 60000);
+    
+    // Add refresh button click handler
+    const refreshBtn = document.getElementById('refresh-data');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', refreshAllData);
+    }
     
     // Update index trackers
     updateIndexTrackers();

@@ -272,6 +272,9 @@ body {
 /* Data status indicator */
 .data-status-container {
     margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .data-status {
@@ -279,6 +282,33 @@ body {
     padding: 4px 10px;
     border-radius: 4px;
     font-weight: 500;
+}
+
+.refresh-btn {
+    background: transparent;
+    border: 1px solid #333;
+    border-radius: 4px;
+    padding: 4px 6px;
+    cursor: pointer;
+    color: #666;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.refresh-btn:hover {
+    border-color: #555;
+    color: #fff;
+}
+
+.refresh-btn.spinning svg {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
 }
 
 .data-status.loading {
