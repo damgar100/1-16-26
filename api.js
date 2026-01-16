@@ -1,8 +1,8 @@
-// Stock API - Fetch real-time data from Finnhub
-// Free tier: 60 API calls/minute
+// Stock API - Fetch real-time data from Twelve Data
+// Free tier: 800 API calls/day, 8 calls/minute
 
-const FINNHUB_API_KEY = 'ctj7l0hr01qovrn4sti0ctj7l0hr01qovrn4stig'; // Free API key
-const FINNHUB_BASE_URL = 'https://finnhub.io/api/v1';
+const TWELVEDATA_API_KEY = 'demo'; // Demo key works for basic quotes
+const TWELVEDATA_BASE_URL = 'https://api.twelvedata.com';
 
 // Cache for API responses
 const apiCache = {
@@ -23,8 +23,7 @@ const dataStatus = {
     isLoading: true
 };
 
-// Ticker normalization for Finnhub API
-// Finnhub uses periods for share classes (BRK.B)
+// Ticker normalization
 function normalizeTickerForAPI(ticker) {
     return ticker.replace('-', '.');
 }
@@ -98,7 +97,7 @@ function updateDataStatusUI() {
     }
 }
 
-// Fetch quote data for a single stock from Finnhub
+// Fetch quote data for a single stock from Twelve Data
 async function fetchStockQuote(symbol) {
     const cacheKey = `quote_${symbol}`;
     const now = Date.now();
@@ -111,7 +110,7 @@ async function fetchStockQuote(symbol) {
     
     try {
         const apiSymbol = normalizeTickerForAPI(symbol);
-        const url = `${FINNHUB_BASE_URL}/quote?symbol=${apiSymbol}&token=${FINNHUB_API_KEY}`;
+        const url = `${TWELVEDATA_BASE_URL}/quote?symbol=${apiSymbol}&apikey=${TWELVEDATA_API_KEY}`;
         
         const response = await fetch(url);
         
@@ -121,18 +120,27 @@ async function fetchStockQuote(symbol) {
         
         const data = await response.json();
         
-        // Finnhub returns: c (current), d (change), dp (percent change), h (high), l (low), o (open), pc (previous close)
-        if (data && data.c && data.c > 0) {
+        // Check for API errors
+        if (data.code || data.status === 'error') {
+            console.log(`API error for ${symbol}:`, data.message || data);
+            return null;
+        }
+        
+        // Twelve Data returns: close, change, percent_change, open, high, low, previous_close, etc.
+        if (data && data.close && parseFloat(data.close) > 0) {
             const quote = {
                 symbol: symbol,
-                currentPrice: data.c,
-                change: data.d,
-                changePercent: data.dp,
-                high: data.h,
-                low: data.l,
-                open: data.o,
-                previousClose: data.pc,
-                timestamp: data.t
+                name: data.name,
+                currentPrice: parseFloat(data.close),
+                change: parseFloat(data.change) || 0,
+                changePercent: parseFloat(data.percent_change) || 0,
+                high: parseFloat(data.high),
+                low: parseFloat(data.low),
+                open: parseFloat(data.open),
+                previousClose: parseFloat(data.previous_close),
+                volume: parseInt(data.volume),
+                week52High: data.fifty_two_week ? parseFloat(data.fifty_two_week.high) : null,
+                week52Low: data.fifty_two_week ? parseFloat(data.fifty_two_week.low) : null
             };
             
             apiCache.quotes[symbol] = quote;
@@ -148,28 +156,89 @@ async function fetchStockQuote(symbol) {
     }
 }
 
-// Fetch quotes for multiple stocks (with rate limiting)
+// Fetch quotes for multiple stocks using batch endpoint
 async function fetchMultipleQuotes(symbols) {
     const quotes = {};
-    const batchSize = 10; // Process 10 at a time to stay under rate limit
-    const delayBetweenBatches = 1000; // 1 second delay between batches
+    
+    // Twelve Data allows batch requests with up to 8 symbols at a time on free tier
+    const batchSize = 8;
+    const delayBetweenBatches = 8000; // 8 seconds to respect rate limit (8 calls/minute)
     
     for (let i = 0; i < symbols.length; i += batchSize) {
         const batch = symbols.slice(i, i + batchSize);
+        const batchSymbols = batch.map(s => normalizeTickerForAPI(s)).join(',');
         
-        // Fetch batch in parallel
-        const promises = batch.map(async (symbol) => {
-            const quote = await fetchStockQuote(symbol);
-            if (quote) {
-                quotes[symbol] = quote;
+        try {
+            const url = `${TWELVEDATA_BASE_URL}/quote?symbol=${batchSymbols}&apikey=${TWELVEDATA_API_KEY}`;
+            console.log(`Fetching batch ${Math.floor(i/batchSize) + 1}/${Math.ceil(symbols.length/batchSize)}...`);
+            
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
             }
-            return quote;
-        });
-        
-        await Promise.all(promises);
+            
+            const data = await response.json();
+            
+            // Handle single vs multiple results
+            if (batch.length === 1) {
+                // Single symbol returns object directly
+                if (data && data.close && !data.code) {
+                    const symbol = batch[0];
+                    quotes[symbol] = {
+                        symbol: symbol,
+                        name: data.name,
+                        currentPrice: parseFloat(data.close),
+                        change: parseFloat(data.change) || 0,
+                        changePercent: parseFloat(data.percent_change) || 0,
+                        high: parseFloat(data.high),
+                        low: parseFloat(data.low),
+                        open: parseFloat(data.open),
+                        previousClose: parseFloat(data.previous_close)
+                    };
+                    apiCache.quotes[symbol] = quotes[symbol];
+                    apiCache.lastUpdate[`quote_${symbol}`] = Date.now();
+                }
+            } else {
+                // Multiple symbols returns object with symbol keys
+                for (const apiSymbol of Object.keys(data)) {
+                    const quoteData = data[apiSymbol];
+                    if (quoteData && quoteData.close && !quoteData.code) {
+                        const originalSymbol = normalizeTickerFromAPI(apiSymbol);
+                        // Find matching symbol from our batch
+                        const matchedSymbol = batch.find(s => 
+                            normalizeTickerForAPI(s) === apiSymbol || s === apiSymbol
+                        ) || originalSymbol;
+                        
+                        quotes[matchedSymbol] = {
+                            symbol: matchedSymbol,
+                            name: quoteData.name,
+                            currentPrice: parseFloat(quoteData.close),
+                            change: parseFloat(quoteData.change) || 0,
+                            changePercent: parseFloat(quoteData.percent_change) || 0,
+                            high: parseFloat(quoteData.high),
+                            low: parseFloat(quoteData.low),
+                            open: parseFloat(quoteData.open),
+                            previousClose: parseFloat(quoteData.previous_close)
+                        };
+                        apiCache.quotes[matchedSymbol] = quotes[matchedSymbol];
+                        apiCache.lastUpdate[`quote_${matchedSymbol}`] = Date.now();
+                    }
+                }
+            }
+            
+            // Update progress
+            dataStatus.successCount = Object.keys(quotes).length;
+            dataStatus.lastUpdate = Date.now();
+            updateDataStatusUI();
+            
+        } catch (error) {
+            console.error(`Error fetching batch:`, error);
+        }
         
         // Delay before next batch (except for last batch)
         if (i + batchSize < symbols.length) {
+            console.log(`Waiting ${delayBetweenBatches/1000}s before next batch...`);
             await new Promise(resolve => setTimeout(resolve, delayBetweenBatches));
         }
     }
@@ -177,55 +246,52 @@ async function fetchMultipleQuotes(symbols) {
     return quotes;
 }
 
-// Fetch candle/chart data for a stock
-async function fetchStockChart(symbol, range = '1mo', interval = '1d') {
-    const cacheKey = `chart_${symbol}_${range}_${interval}`;
+// Fetch time series/chart data for a stock
+async function fetchStockChart(symbol, range = '1mo') {
+    const cacheKey = `chart_${symbol}_${range}`;
     const now = Date.now();
     
     // Check cache
-    if (apiCache.charts[cacheKey] && (now - apiCache.lastUpdate[cacheKey]) < CACHE_DURATION) {
+    if (apiCache.charts[cacheKey] && (now - apiCache.lastUpdate[cacheKey]) < CACHE_DURATION * 5) {
         return apiCache.charts[cacheKey];
     }
     
     try {
         const apiSymbol = normalizeTickerForAPI(symbol);
         
-        // Calculate from/to timestamps based on range
-        const to = Math.floor(Date.now() / 1000);
-        let from;
-        let resolution;
-        
+        // Map range to Twelve Data parameters
+        let interval, outputsize;
         switch(range) {
             case '1d':
-                from = to - 86400;
-                resolution = '5';
+                interval = '5min';
+                outputsize = '78'; // Full trading day
                 break;
             case '5d':
-                from = to - 5 * 86400;
-                resolution = '15';
+                interval = '15min';
+                outputsize = '130';
                 break;
             case '1mo':
-                from = to - 30 * 86400;
-                resolution = 'D';
+                interval = '1day';
+                outputsize = '22';
                 break;
             case '3mo':
-                from = to - 90 * 86400;
-                resolution = 'D';
+                interval = '1day';
+                outputsize = '66';
                 break;
             case '1y':
-                from = to - 365 * 86400;
-                resolution = 'D';
+                interval = '1day';
+                outputsize = '252';
                 break;
             case '5y':
-                from = to - 5 * 365 * 86400;
-                resolution = 'W';
+                interval = '1week';
+                outputsize = '260';
                 break;
             default:
-                from = to - 30 * 86400;
-                resolution = 'D';
+                interval = '1day';
+                outputsize = '22';
         }
         
-        const url = `${FINNHUB_BASE_URL}/stock/candle?symbol=${apiSymbol}&resolution=${resolution}&from=${from}&to=${to}&token=${FINNHUB_API_KEY}`;
+        const url = `${TWELVEDATA_BASE_URL}/time_series?symbol=${apiSymbol}&interval=${interval}&outputsize=${outputsize}&apikey=${TWELVEDATA_API_KEY}`;
         
         const response = await fetch(url);
         
@@ -235,17 +301,17 @@ async function fetchStockChart(symbol, range = '1mo', interval = '1d') {
         
         const data = await response.json();
         
-        // Finnhub returns: c (close), h (high), l (low), o (open), t (timestamps), v (volume), s (status)
-        if (data && data.s === 'ok' && data.t && data.c) {
-            const chartData = data.t.map((timestamp, i) => ({
-                date: new Date(timestamp * 1000).toISOString(),
-                price: data.c[i],
-                open: data.o[i],
-                high: data.h[i],
-                low: data.l[i],
-                close: data.c[i],
-                volume: data.v[i]
-            })).filter(d => d.price !== null && d.price !== undefined);
+        if (data && data.values && Array.isArray(data.values)) {
+            // Twelve Data returns newest first, so reverse for chronological order
+            const chartData = data.values.reverse().map(item => ({
+                date: item.datetime,
+                price: parseFloat(item.close),
+                open: parseFloat(item.open),
+                high: parseFloat(item.high),
+                low: parseFloat(item.low),
+                close: parseFloat(item.close),
+                volume: parseInt(item.volume) || 0
+            })).filter(d => d.price > 0);
             
             apiCache.charts[cacheKey] = chartData;
             apiCache.lastUpdate[cacheKey] = now;
@@ -260,15 +326,15 @@ async function fetchStockChart(symbol, range = '1mo', interval = '1d') {
     }
 }
 
-// Map period to Finnhub range/resolution
+// Map period to range
 function getPeriodParams(period) {
     const params = {
-        '1D': { range: '1d', interval: '5m' },
-        '1W': { range: '5d', interval: '15m' },
-        '1M': { range: '1mo', interval: '1d' },
-        '3M': { range: '3mo', interval: '1d' },
-        '1Y': { range: '1y', interval: '1d' },
-        '5Y': { range: '5y', interval: '1wk' }
+        '1D': { range: '1d' },
+        '1W': { range: '5d' },
+        '1M': { range: '1mo' },
+        '3M': { range: '3mo' },
+        '1Y': { range: '1y' },
+        '5Y': { range: '5y' }
     };
     return params[period] || params['1M'];
 }
@@ -296,7 +362,7 @@ async function updateStockFromAPI(symbol) {
     
     const stockData = {
         ticker: symbol,
-        name: basicStock ? basicStock.name : symbol,
+        name: quote.name || (basicStock ? basicStock.name : symbol),
         sector: sectorName || 'Unknown',
         currentPrice: quote.currentPrice,
         change: quote.change || 0,
@@ -305,6 +371,9 @@ async function updateStockFromAPI(symbol) {
         open: quote.open,
         high: quote.high,
         low: quote.low,
+        week52High: quote.week52High,
+        week52Low: quote.week52Low,
+        volume: quote.volume,
         priceHistory: {}
     };
     
@@ -320,7 +389,7 @@ async function fetchChartForPeriod(symbol, period) {
 
 // Update treemap with real data
 async function updateTreemapWithRealData() {
-    console.log('Fetching real-time stock data from Finnhub...');
+    console.log('Fetching real-time stock data from Twelve Data...');
     
     // Reset data status
     dataStatus.isLoading = true;
@@ -342,26 +411,30 @@ async function updateTreemapWithRealData() {
     const quotes = await fetchMultipleQuotes(allTickers);
     
     // Update sp500Data with real prices
+    let successCount = 0;
+    let failCount = 0;
+    
     sp500Data.children.forEach(sector => {
         sector.children.forEach(stock => {
             if (quotes[stock.ticker]) {
                 const quote = quotes[stock.ticker];
-                // Use changePercent (dp from Finnhub) for daily percentage change
                 if (quote.changePercent !== undefined && quote.changePercent !== null) {
                     stock.change = quote.changePercent;
                     stock.currentPrice = quote.currentPrice;
-                    dataStatus.successCount++;
+                    successCount++;
                 } else {
-                    dataStatus.failCount++;
+                    failCount++;
                 }
             } else {
-                dataStatus.failCount++;
+                failCount++;
             }
         });
     });
     
+    dataStatus.successCount = successCount;
+    dataStatus.failCount = failCount;
     dataStatus.lastUpdate = Date.now();
-    dataStatus.isLive = dataStatus.successCount > 0;
+    dataStatus.isLive = successCount > 0;
     dataStatus.isLoading = false;
     updateDataStatusUI();
     
@@ -370,13 +443,13 @@ async function updateTreemapWithRealData() {
         initTreemap();
     }
     
-    console.log(`Stock data updated! ${dataStatus.successCount} loaded, ${dataStatus.failCount} failed`);
+    console.log(`Stock data updated! ${successCount} loaded, ${failCount} failed`);
 }
 
 // Fetch index data (S&P 500 and NASDAQ)
 async function updateIndexTrackers() {
     try {
-        // Finnhub uses SPY for S&P 500 ETF and QQQ for NASDAQ
+        // Use SPY for S&P 500 and QQQ for NASDAQ
         const [spyQuote, qqqQuote] = await Promise.all([
             fetchStockQuote('SPY'),
             fetchStockQuote('QQQ')
@@ -418,9 +491,9 @@ function isMarketOpen() {
     const [hours, minutes] = etTimeStr.split(':').map(Number);
     const currentMinutes = hours * 60 + minutes;
     
-    // Market hours: 9:30 AM - 4:00 PM ET (570 - 960 minutes)
-    const marketOpen = 9 * 60 + 30;  // 9:30 AM
-    const marketClose = 16 * 60;      // 4:00 PM
+    // Market hours: 9:30 AM - 4:00 PM ET
+    const marketOpen = 9 * 60 + 30;
+    const marketClose = 16 * 60;
     
     // Check if it's a weekday
     const etDayOptions = { timeZone: 'America/New_York', weekday: 'short' };
@@ -480,19 +553,19 @@ document.addEventListener('DOMContentLoaded', function() {
         refreshBtn.addEventListener('click', refreshAllData);
     }
     
-    // Update index trackers
+    // Update index trackers first (quick)
     updateIndexTrackers();
     
-    // Update treemap data (with slight delay to let page load first)
+    // Update treemap data
     setTimeout(() => {
         updateTreemapWithRealData();
     }, 500);
     
-    // Refresh data every 5 minutes
+    // Refresh data every 10 minutes (to respect API limits)
     setInterval(() => {
         updateIndexTrackers();
         updateTreemapWithRealData();
-    }, 300000);
+    }, 600000);
     
     // Update the "X minutes ago" display every minute
     setInterval(updateDataStatusUI, 60000);
