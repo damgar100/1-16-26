@@ -138,20 +138,32 @@ async function openStockPanel(ticker) {
     currentStock = stock;
     currentPeriod = '1M';
     
-    // Update panel content
-    document.querySelector('.stock-ticker').textContent = stock.ticker;
-    document.querySelector('.stock-sector').textContent = stock.sector || 'Unknown';
-    document.querySelector('.stock-name-full').textContent = stock.name;
+    // Log stock data for debugging
+    console.log('Stock data:', stock);
     
-    // Price section
-    const priceChange = document.querySelector('.price-change');
-    const price = stock.currentPrice || 0;
-    const change = stock.change || 0;
-    const changePercent = stock.changePercent || 0;
-    const changeSign = change >= 0 ? '+' : '';
-    document.querySelector('.price-value').textContent = `$${price.toFixed(2)}`;
-    priceChange.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
-    priceChange.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+    // Update panel content
+    document.querySelector('.stock-ticker').textContent = stock.ticker || 'N/A';
+    document.querySelector('.stock-sector').textContent = stock.sector || 'Unknown';
+    document.querySelector('.stock-name-full').textContent = stock.name || 'Unknown';
+    
+    // Price section - handle null/undefined values
+    const priceEl = document.querySelector('.price-value');
+    const priceChangeEl = document.querySelector('.price-change');
+    
+    const price = parseFloat(stock.currentPrice) || 0;
+    const change = parseFloat(stock.change) || 0;
+    const changePercent = parseFloat(stock.changePercent) || 0;
+    
+    if (price > 0) {
+        priceEl.textContent = `$${price.toFixed(2)}`;
+        const changeSign = change >= 0 ? '+' : '';
+        priceChangeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+        priceChangeEl.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+    } else {
+        priceEl.textContent = 'Price unavailable';
+        priceChangeEl.textContent = '';
+        priceChangeEl.className = 'price-change';
+    }
     
     // After hours / Pre-market
     const priceDetails = document.querySelector('.price-details');

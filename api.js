@@ -1,7 +1,14 @@
 // Stock API - Fetch real-time data from Yahoo Finance
-// Using a CORS proxy for client-side requests
+// Using multiple CORS proxies as fallbacks
 
-const CORS_PROXY = 'https://corsproxy.io/?';
+const CORS_PROXIES = [
+    'https://corsproxy.io/?',
+    'https://api.allorigins.win/raw?url=',
+    'https://cors-anywhere.herokuapp.com/'
+];
+
+let currentProxyIndex = 0;
+
 const YAHOO_QUOTE_URL = 'https://query1.finance.yahoo.com/v7/finance/quote';
 const YAHOO_CHART_URL = 'https://query1.finance.yahoo.com/v8/finance/chart';
 
@@ -14,6 +21,34 @@ const apiCache = {
 
 const CACHE_DURATION = 60000; // 1 minute cache
 
+// Try fetching with different proxies
+async function fetchWithProxy(url) {
+    for (let i = 0; i < CORS_PROXIES.length; i++) {
+        const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
+        const proxy = CORS_PROXIES[proxyIndex];
+        
+        try {
+            const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
+            console.log(`Trying proxy ${proxyIndex}: ${proxy}`);
+            
+            const response = await fetch(proxyUrl, {
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                currentProxyIndex = proxyIndex; // Remember working proxy
+                return await response.json();
+            }
+        } catch (error) {
+            console.log(`Proxy ${proxyIndex} failed:`, error.message);
+        }
+    }
+    
+    throw new Error('All proxies failed');
+}
+
 // Fetch quote data for a single stock
 async function fetchStockQuote(symbol) {
     const cacheKey = `quote_${symbol}`;
@@ -21,13 +56,15 @@ async function fetchStockQuote(symbol) {
     
     // Check cache
     if (apiCache.quotes[symbol] && (now - apiCache.lastUpdate[cacheKey]) < CACHE_DURATION) {
+        console.log(`Using cached data for ${symbol}`);
         return apiCache.quotes[symbol];
     }
     
     try {
-        const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_QUOTE_URL}?symbols=${symbol}`)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const url = `${YAHOO_QUOTE_URL}?symbols=${symbol}`;
+        const data = await fetchWithProxy(url);
+        
+        console.log(`API response for ${symbol}:`, data);
         
         if (data.quoteResponse && data.quoteResponse.result && data.quoteResponse.result.length > 0) {
             const quote = data.quoteResponse.result[0];
@@ -35,6 +72,8 @@ async function fetchStockQuote(symbol) {
             apiCache.lastUpdate[cacheKey] = now;
             return quote;
         }
+        
+        console.log(`No quote data in response for ${symbol}`);
         return null;
     } catch (error) {
         console.error(`Error fetching quote for ${symbol}:`, error);
@@ -47,9 +86,8 @@ async function fetchMultipleQuotes(symbols) {
     const symbolList = symbols.join(',');
     
     try {
-        const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_QUOTE_URL}?symbols=${symbolList}`)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const url = `${YAHOO_QUOTE_URL}?symbols=${symbolList}`;
+        const data = await fetchWithProxy(url);
         
         if (data.quoteResponse && data.quoteResponse.result) {
             const quotes = {};
@@ -78,9 +116,8 @@ async function fetchStockChart(symbol, range = '1mo', interval = '1d') {
     }
     
     try {
-        const url = `${CORS_PROXY}${encodeURIComponent(`${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`)}`;
-        const response = await fetch(url);
-        const data = await response.json();
+        const url = `${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`;
+        const data = await fetchWithProxy(url);
         
         if (data.chart && data.chart.result && data.chart.result.length > 0) {
             const result = data.chart.result[0];
@@ -130,15 +167,25 @@ async function updateStockFromAPI(symbol) {
         return null;
     }
     
+    // Log the quote to debug
+    console.log(`Quote data for ${symbol}:`, quote);
+    
+    // Check if we have a valid price
+    const price = quote.regularMarketPrice || quote.postMarketPrice || quote.preMarketPrice;
+    if (!price) {
+        console.log(`No price data for ${symbol}`);
+        return null;
+    }
+    
     // Create or update stockDetails entry
     const stockData = {
-        ticker: quote.symbol,
-        name: quote.shortName || quote.longName || symbol,
+        ticker: quote.symbol || symbol,
+        name: quote.shortName || quote.longName || quote.displayName || symbol,
         sector: quote.sector || 'Unknown',
-        currentPrice: quote.regularMarketPrice,
-        change: quote.regularMarketChange,
-        changePercent: quote.regularMarketChangePercent,
-        prevClose: quote.regularMarketPreviousClose,
+        currentPrice: quote.regularMarketPrice || price,
+        change: quote.regularMarketChange || 0,
+        changePercent: quote.regularMarketChangePercent || 0,
+        prevClose: quote.regularMarketPreviousClose || quote.previousClose,
         open: quote.regularMarketOpen,
         high: quote.regularMarketDayHigh,
         low: quote.regularMarketDayLow,
@@ -156,7 +203,7 @@ async function updateStockFromAPI(symbol) {
         eps: quote.epsTrailingTwelveMonths,
         epsForward: quote.epsForward,
         divAnnual: quote.trailingAnnualDividendRate,
-        divYield: quote.trailingAnnualDividendYield ? quote.trailingAnnualDividendYield * 100 : 0,
+        divYield: quote.trailingAnnualDividendYield ? quote.trailingAnnualDividendYield * 100 : (quote.dividendYield ? quote.dividendYield * 100 : 0),
         beta: quote.beta,
         sharesOutstanding: quote.sharesOutstanding,
         floatShares: quote.floatShares,
@@ -172,7 +219,7 @@ async function updateStockFromAPI(symbol) {
         preMarketChange: quote.preMarketChange,
         preMarketPercent: quote.preMarketChangePercent,
         // Additional data
-        exchange: quote.exchange,
+        exchange: quote.exchange || quote.fullExchangeName,
         currency: quote.currency,
         fiftyDayAverage: quote.fiftyDayAverage,
         twoHundredDayAverage: quote.twoHundredDayAverage,
