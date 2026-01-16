@@ -13,6 +13,10 @@
             <h1>S&P 500 Treemap</h1>
             <p class="subtitle">Stock performance by market cap and sector</p>
         </div>
+        <div class="search-container">
+            <input type="text" id="stock-search" placeholder="Search ticker or company..." autocomplete="off">
+            <div id="search-results" class="search-results"></div>
+        </div>
         <div class="index-trackers">
             <div class="index-item">
                 <span class="index-name">S&P 500</span>
@@ -37,7 +41,116 @@
     </div>
     <div id="treemap"></div>
     <div id="tooltip" class="tooltip"></div>
+    
+    <!-- Stock Detail Modal -->
+    <div id="stock-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="stock-title">
+                    <span class="stock-ticker">AAPL</span>
+                    <span class="stock-name">Apple Inc.</span>
+                </div>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="stock-price-section">
+                <div class="current-price">
+                    <span class="price-value">$178.52</span>
+                    <span class="price-change positive">+2.35 (+1.33%)</span>
+                </div>
+            </div>
+            <div class="chart-container">
+                <div class="time-selector">
+                    <button class="time-btn" data-period="1D">1D</button>
+                    <button class="time-btn" data-period="1W">1W</button>
+                    <button class="time-btn active" data-period="1M">1M</button>
+                    <button class="time-btn" data-period="3M">3M</button>
+                    <button class="time-btn" data-period="1Y">1Y</button>
+                    <button class="time-btn" data-period="5Y">5Y</button>
+                </div>
+                <div id="stock-chart"></div>
+            </div>
+            <div class="stock-metrics">
+                <div class="metrics-section">
+                    <h3>Key Statistics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">Open</span>
+                            <span class="metric-value" id="metric-open">$176.15</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">High</span>
+                            <span class="metric-value" id="metric-high">$179.23</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Low</span>
+                            <span class="metric-value" id="metric-low">$175.82</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">52W High</span>
+                            <span class="metric-value" id="metric-52high">$198.23</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">52W Low</span>
+                            <span class="metric-value" id="metric-52low">$124.17</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Volume</span>
+                            <span class="metric-value" id="metric-volume">52.3M</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Avg Volume</span>
+                            <span class="metric-value" id="metric-avgvol">58.2M</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Market Cap</span>
+                            <span class="metric-value" id="metric-marketcap">$2.89T</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="metrics-section">
+                    <h3>Fundamentals</h3>
+                    <div class="metrics-grid">
+                        <div class="metric">
+                            <span class="metric-label">P/E Ratio</span>
+                            <span class="metric-value" id="metric-pe">29.45</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">EPS (TTM)</span>
+                            <span class="metric-value" id="metric-eps">$6.06</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Revenue (Q)</span>
+                            <span class="metric-value" id="metric-revenue">$94.8B</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Net Income (Q)</span>
+                            <span class="metric-value" id="metric-netincome">$23.0B</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Dividend Yield</span>
+                            <span class="metric-value" id="metric-divyield">0.51%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Beta</span>
+                            <span class="metric-value" id="metric-beta">1.28</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">Profit Margin</span>
+                            <span class="metric-value" id="metric-margin">24.3%</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-label">ROE</span>
+                            <span class="metric-value" id="metric-roe">147.2%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script src="data.js"></script>
+    <script src="stockData.js"></script>
     <script src="treemap.js"></script>
+    <script src="stockDetail.js"></script>
 </body>
 </html>
