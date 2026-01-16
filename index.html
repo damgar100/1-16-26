@@ -5,7 +5,532 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>S&P 500 Treemap</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    background-color: #1a1a1a;
+    color: #fff;
+    min-height: 100vh;
+}
+
+.header {
+    padding: 20px;
+    background-color: #111;
+    border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.header-left {
+    text-align: left;
+}
+
+.title-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 5px;
+}
+
+.raccoon-container {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    cursor: pointer;
+}
+
+.raccoon-awake, .raccoon-asleep {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transition: opacity 0.3s ease;
+}
+
+.raccoon-awake svg {
+    animation: raccoon-bounce 2s ease-in-out infinite;
+}
+
+.raccoon-asleep svg {
+    animation: raccoon-breathe 3s ease-in-out infinite;
+}
+
+.raccoon-asleep .zzz-float {
+    animation: zzz-float 2s ease-in-out infinite;
+}
+
+@keyframes raccoon-bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-3px); }
+}
+
+@keyframes raccoon-breathe {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+}
+
+@keyframes zzz-float {
+    0%, 100% { opacity: 0.7; transform: translateY(0); }
+    50% { opacity: 1; transform: translateY(-2px); }
+}
+
+.header h1 {
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.subtitle {
+    color: #888;
+    font-size: 14px;
+}
+
+.market-status {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+}
+
+.market-status.open {
+    background-color: rgba(46, 204, 113, 0.2);
+    color: #2ecc71;
+}
+
+.market-status.closed {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+}
+
+.index-trackers {
+    display: flex;
+    gap: 25px;
+}
+
+.index-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.index-name {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 2px;
+}
+
+.index-change {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.index-change.positive { color: #2ecc71; }
+.index-change.negative { color: #e74c3c; }
+
+.controls-bar {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 10px 20px;
+    background-color: #0a0a0a;
+    border-bottom: 1px solid #222;
+}
+
+.control-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stats-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.stats-btn:hover {
+    border-color: #555;
+    color: #fff;
+}
+
+#show-gainers:hover { border-color: #2ecc71; color: #2ecc71; }
+#show-losers:hover { border-color: #e74c3c; color: #e74c3c; }
+
+.shortcuts-container { position: relative; }
+
+.shortcuts-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: transparent;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.shortcuts-btn:hover { border-color: #555; color: #aaa; }
+
+.shortcuts-tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px 15px;
+    min-width: 160px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s, visibility 0.2s;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.shortcuts-container:hover .shortcuts-tooltip {
+    opacity: 1;
+    visibility: visible;
+}
+
+.shortcuts-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #333;
+}
+
+.shortcut-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 5px 0;
+    font-size: 12px;
+    color: #aaa;
+}
+
+.shortcut-item kbd {
+    background: #333;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 11px;
+    color: #fff;
+    min-width: 28px;
+    text-align: center;
+}
+
+.data-status-container {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.data-status {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.data-status.loading { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
+.data-status.live { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
+.data-status.offline { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+
+.last-updated {
+    font-size: 11px;
+    color: #666;
+}
+
+.quick-stats-panel {
+    position: fixed;
+    top: 130px;
+    left: 20px;
+    width: 320px;
+    max-height: 400px;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 10px;
+    z-index: 200;
+    display: none;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+.quick-stats-panel.visible {
+    display: block;
+    animation: slideIn 0.2s ease;
+}
+
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.quick-stats-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #222;
+}
+
+.quick-stats-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 0;
+}
+
+.quick-stats-header h3.gainers { color: #2ecc71; }
+.quick-stats-header h3.losers { color: #e74c3c; }
+
+.quick-stats-close {
+    background: none;
+    border: none;
+    color: #666;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 5px;
+    line-height: 1;
+}
+
+.quick-stats-close:hover { color: #fff; }
+
+.quick-stats-list {
+    max-height: 330px;
+    overflow-y: auto;
+}
+
+.quick-stats-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    border-bottom: 1px solid #1a1a1a;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.quick-stats-item:hover { background: #1a1a1a; }
+.quick-stats-item:last-child { border-bottom: none; }
+
+.quick-stats-stock {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.quick-stats-ticker { font-weight: 600; font-size: 14px; }
+.quick-stats-name { font-size: 11px; color: #666; }
+.quick-stats-change { font-weight: 600; font-size: 14px; }
+.quick-stats-change.positive { color: #2ecc71; }
+.quick-stats-change.negative { color: #e74c3c; }
+.quick-stats-empty { padding: 30px 15px; text-align: center; color: #666; font-size: 13px; }
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 12px 15px;
+    background-color: #111;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.legend-color {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+#treemap {
+    width: 100%;
+    height: calc(100vh - 175px);
+    padding: 10px;
+}
+
+#treemap svg {
+    width: 100%;
+    height: 100%;
+}
+
+.node {
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.node:hover { opacity: 0.8; }
+
+.node rect {
+    stroke: #1a1a1a;
+    stroke-width: 1px;
+}
+
+.node text {
+    pointer-events: none;
+    fill: #fff;
+    text-anchor: middle;
+    font-weight: 500;
+}
+
+.node .ticker { font-size: 12px; font-weight: 600; }
+.node .change { font-size: 10px; }
+
+.node.no-data rect { opacity: 0.6; }
+.node.no-data .ticker { fill: #999; }
+.node.no-data .change { display: none; }
+
+.tooltip {
+    position: absolute;
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #444;
+    border-radius: 6px;
+    padding: 12px;
+    font-size: 13px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s;
+    z-index: 1000;
+    min-width: 180px;
+}
+
+.tooltip.visible { opacity: 1; }
+.tooltip .company-name { font-weight: 600; margin-bottom: 8px; font-size: 14px; }
+.tooltip .info-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.tooltip .label { color: #888; }
+.tooltip .value { font-weight: 500; }
+.tooltip .positive { color: #2ecc71; }
+.tooltip .negative { color: #e74c3c; }
+
+.sector-label {
+    font-size: 11px;
+    fill: rgba(255, 255, 255, 0.4);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.search-container {
+    position: relative;
+    width: 300px;
+}
+
+#stock-search {
+    width: 100%;
+    padding: 10px 15px;
+    font-size: 14px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background-color: #222;
+    color: #fff;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+#stock-search:focus { border-color: #2ecc71; }
+#stock-search::placeholder { color: #666; }
+
+.search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #222;
+    border: 1px solid #444;
+    border-radius: 8px;
+    margin-top: 5px;
+    max-height: 300px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1001;
+}
+
+.search-results.visible { display: block; }
+
+.search-result-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #333;
+}
+
+.search-result-item:last-child { border-bottom: none; }
+.search-result-item:hover { background-color: #333; }
+.search-result-ticker { font-weight: 600; color: #fff; }
+.search-result-name { font-size: 12px; color: #888; margin-left: 10px; }
+.search-result-change { font-size: 12px; font-weight: 500; }
+.search-result-change.positive { color: #2ecc71; }
+.search-result-change.negative { color: #e74c3c; }
+
+.loading-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 175px);
+    color: #888;
+    font-size: 16px;
+}
+
+.loading-message .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid #333;
+    border-top-color: #2ecc71;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.error-message {
+    text-align: center;
+    padding: 40px;
+    color: #e74c3c;
+}
+
+.error-message h2 { margin-bottom: 10px; }
+.error-message p { color: #888; margin-bottom: 5px; }
+.error-message code { background: #222; padding: 2px 6px; border-radius: 3px; font-size: 14px; }
+
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 15px;
+    }
+    .header-left { text-align: center; }
+    .search-container { width: 100%; max-width: 300px; }
+    .controls-bar { flex-wrap: wrap; justify-content: center; gap: 10px; }
+    .data-status-container { margin-left: 0; }
+    .quick-stats-panel { left: 10px; right: 10px; width: auto; }
+}
+    </style>
 </head>
 <body>
     <div class="header">
@@ -14,89 +539,56 @@
                 <div class="raccoon-container" id="raccoon">
                     <div class="raccoon-awake" id="raccoon-awake">
                         <svg viewBox="0 0 64 64" width="52" height="52">
-                            <!-- Soft shadow under face -->
                             <ellipse cx="32" cy="54" rx="14" ry="4" fill="rgba(0,0,0,0.15)"/>
-                            <!-- Fluffy body hint -->
                             <ellipse cx="32" cy="52" rx="16" ry="8" fill="#9E9E9E"/>
-                            <!-- Big fluffy face -->
                             <ellipse cx="32" cy="35" rx="22" ry="20" fill="#A8A8A8"/>
-                            <!-- Fluffy cheeks -->
                             <ellipse cx="14" cy="40" rx="6" ry="5" fill="#B8B8B8"/>
                             <ellipse cx="50" cy="40" rx="6" ry="5" fill="#B8B8B8"/>
-                            <!-- Round ears -->
                             <circle cx="14" cy="16" r="9" fill="#5C5C5C"/>
                             <circle cx="50" cy="16" r="9" fill="#5C5C5C"/>
                             <circle cx="14" cy="16" r="6" fill="#FFB6C1"/>
                             <circle cx="50" cy="16" r="6" fill="#FFB6C1"/>
-                            <!-- Inner face (white/cream) -->
                             <ellipse cx="32" cy="38" rx="15" ry="13" fill="#E8E8E8"/>
-                            <!-- Cute eye masks (rounder, softer) -->
                             <ellipse cx="22" cy="32" rx="8" ry="7" fill="#3D3D3D"/>
                             <ellipse cx="42" cy="32" rx="8" ry="7" fill="#3D3D3D"/>
-                            <!-- Big sparkly eyes -->
                             <ellipse cx="22" cy="32" rx="5" ry="5.5" fill="#FFFFFF"/>
                             <ellipse cx="42" cy="32" rx="5" ry="5.5" fill="#FFFFFF"/>
-                            <!-- Pupils -->
                             <circle cx="23" cy="33" r="3" fill="#2D1B0E"/>
                             <circle cx="43" cy="33" r="3" fill="#2D1B0E"/>
-                            <!-- Eye sparkles -->
                             <circle cx="21" cy="31" r="1.5" fill="#FFFFFF"/>
                             <circle cx="41" cy="31" r="1.5" fill="#FFFFFF"/>
-                            <circle cx="24" cy="34" r="0.8" fill="#FFFFFF"/>
-                            <circle cx="44" cy="34" r="0.8" fill="#FFFFFF"/>
-                            <!-- Rosy cheeks -->
                             <ellipse cx="15" cy="40" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.5"/>
                             <ellipse cx="49" cy="40" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.5"/>
-                            <!-- Cute button nose -->
                             <ellipse cx="32" cy="42" rx="3.5" ry="2.5" fill="#3D3D3D"/>
-                            <ellipse cx="31" cy="41.5" rx="1" ry="0.7" fill="#5D5D5D"/>
-                            <!-- Happy little mouth -->
                             <path d="M 28 46 Q 32 50 36 46" stroke="#3D3D3D" stroke-width="2" fill="none" stroke-linecap="round"/>
-                            <!-- Tiny tongue -->
                             <ellipse cx="32" cy="48" rx="2" ry="1.5" fill="#FF9999"/>
                         </svg>
                     </div>
                     <div class="raccoon-asleep" id="raccoon-asleep" style="display: none;">
                         <svg viewBox="0 0 64 64" width="52" height="52">
-                            <!-- Soft shadow under face -->
                             <ellipse cx="32" cy="54" rx="14" ry="4" fill="rgba(0,0,0,0.15)"/>
-                            <!-- Fluffy body hint -->
                             <ellipse cx="32" cy="52" rx="16" ry="8" fill="#9E9E9E"/>
-                            <!-- Big fluffy face -->
                             <ellipse cx="32" cy="35" rx="22" ry="20" fill="#A8A8A8"/>
-                            <!-- Fluffy cheeks -->
                             <ellipse cx="14" cy="40" rx="6" ry="5" fill="#B8B8B8"/>
                             <ellipse cx="50" cy="40" rx="6" ry="5" fill="#B8B8B8"/>
-                            <!-- Round ears -->
                             <circle cx="14" cy="16" r="9" fill="#5C5C5C"/>
                             <circle cx="50" cy="16" r="9" fill="#5C5C5C"/>
                             <circle cx="14" cy="16" r="6" fill="#FFB6C1"/>
                             <circle cx="50" cy="16" r="6" fill="#FFB6C1"/>
-                            <!-- Inner face (white/cream) -->
                             <ellipse cx="32" cy="38" rx="15" ry="13" fill="#E8E8E8"/>
-                            <!-- Cute eye masks (rounder, softer) -->
                             <ellipse cx="22" cy="32" rx="8" ry="7" fill="#3D3D3D"/>
                             <ellipse cx="42" cy="32" rx="8" ry="7" fill="#3D3D3D"/>
-                            <!-- Sleepy closed eyes (happy curved lines) -->
                             <path d="M 17 32 Q 22 36 27 32" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
                             <path d="M 37 32 Q 42 36 47 32" stroke="#FFFFFF" stroke-width="2.5" fill="none" stroke-linecap="round"/>
-                            <!-- Rosy cheeks -->
                             <ellipse cx="15" cy="40" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.5"/>
                             <ellipse cx="49" cy="40" rx="4" ry="2.5" fill="#FFB6C1" opacity="0.5"/>
-                            <!-- Cute button nose -->
                             <ellipse cx="32" cy="42" rx="3.5" ry="2.5" fill="#3D3D3D"/>
-                            <ellipse cx="31" cy="41.5" rx="1" ry="0.7" fill="#5D5D5D"/>
-                            <!-- Peaceful sleeping smile -->
                             <path d="M 29 46 Q 32 48 35 46" stroke="#3D3D3D" stroke-width="2" fill="none" stroke-linecap="round"/>
-                            <!-- Cute Zzz bubbles -->
                             <g class="zzz-float">
                                 <text x="52" y="22" fill="#89CFF0" font-size="11" font-family="Comic Sans MS, cursive" font-weight="bold">z</text>
                                 <text x="56" y="14" fill="#89CFF0" font-size="9" font-family="Comic Sans MS, cursive" font-weight="bold">z</text>
                                 <text x="59" y="7" fill="#89CFF0" font-size="7" font-family="Comic Sans MS, cursive" font-weight="bold">z</text>
                             </g>
-                            <!-- Sleep blush -->
-                            <ellipse cx="18" cy="38" rx="3" ry="2" fill="#FFB6C1" opacity="0.3"/>
-                            <ellipse cx="46" cy="38" rx="3" ry="2" fill="#FFB6C1" opacity="0.3"/>
                         </svg>
                     </div>
                 </div>
@@ -111,36 +603,31 @@
         <div class="index-trackers">
             <div class="index-item">
                 <span class="index-name">S&P 500</span>
-                <span class="index-change positive">+0.82%</span>
+                <span class="index-change" id="spy-change">--</span>
             </div>
             <div class="index-item">
                 <span class="index-name">NASDAQ</span>
-                <span class="index-change positive">+1.24%</span>
+                <span class="index-change" id="qqq-change">--</span>
             </div>
         </div>
     </div>
     <div class="controls-bar">
         <div class="control-group quick-stats">
-            <button class="stats-btn" id="show-gainers" title="Top Gainers">Top Gainers</button>
-            <button class="stats-btn" id="show-losers" title="Top Losers">Top Losers</button>
+            <button class="stats-btn" id="show-gainers">Top Gainers</button>
+            <button class="stats-btn" id="show-losers">Top Losers</button>
         </div>
         <div class="control-group shortcuts-container">
             <button class="shortcuts-btn">Shortcuts</button>
             <div class="shortcuts-tooltip">
                 <div class="shortcut-item"><kbd>G</kbd> <span>Top Gainers</span></div>
                 <div class="shortcut-item"><kbd>L</kbd> <span>Top Losers</span></div>
-                <div class="shortcut-item"><kbd>R</kbd> <span>Refresh data</span></div>
                 <div class="shortcut-item"><kbd>/</kbd> <span>Search</span></div>
                 <div class="shortcut-item"><kbd>Esc</kbd> <span>Close panel</span></div>
             </div>
         </div>
         <div class="data-status-container">
             <span class="data-status loading" id="data-status">Loading...</span>
-            <button class="refresh-btn" id="refresh-data" title="Refresh data">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-                </svg>
-            </button>
+            <span class="last-updated" id="last-updated"></span>
         </div>
     </div>
     <div class="legend">
@@ -156,7 +643,6 @@
         <span class="legend-item"><span class="legend-color" style="background: #444;"></span> No data</span>
     </div>
     
-    <!-- Quick Stats Panel (Gainers/Losers) -->
     <div id="quick-stats-panel" class="quick-stats-panel">
         <div class="quick-stats-header">
             <h3 id="quick-stats-title">Top Gainers</h3>
@@ -164,356 +650,458 @@
         </div>
         <div id="quick-stats-list" class="quick-stats-list"></div>
     </div>
-    <div class="main-content">
-        <div id="treemap"></div>
-        
-        <!-- Stock Detail Panel (slides in from right) -->
-        <div id="stock-panel" class="stock-panel">
-            <div class="panel-header">
-                <button class="panel-close">&larr; Back</button>
-                <div class="stock-title">
-                    <span class="stock-ticker">AAPL</span>
-                    <span class="stock-sector">Technology</span>
-                </div>
-            </div>
-            
-            <div class="panel-content">
-                <div class="stock-hero">
-                    <div class="stock-name-full">Apple Inc.</div>
-                    <div class="current-price">
-                        <span class="price-value">$178.52</span>
-                        <span class="price-change positive">+2.35 (+1.33%)</span>
-                    </div>
-                    <div class="price-details">
-                        <span class="price-detail">After Hours: <span class="ah-price">$178.80</span> <span class="ah-change positive">+0.28 (+0.16%)</span></span>
-                    </div>
-                </div>
-                
-                <div class="chart-section">
-                    <div class="time-selector">
-                        <button class="time-btn" data-period="1D">1D</button>
-                        <button class="time-btn" data-period="1W">1W</button>
-                        <button class="time-btn active" data-period="1M">1M</button>
-                        <button class="time-btn" data-period="3M">3M</button>
-                        <button class="time-btn" data-period="1Y">1Y</button>
-                        <button class="time-btn" data-period="5Y">5Y</button>
-                    </div>
-                    <div id="stock-chart"></div>
-                    <div class="chart-stats">
-                        <div class="chart-stat">
-                            <span class="stat-label">Period High</span>
-                            <span class="stat-value" id="chart-high">$182.34</span>
-                        </div>
-                        <div class="chart-stat">
-                            <span class="stat-label">Period Low</span>
-                            <span class="stat-value" id="chart-low">$165.12</span>
-                        </div>
-                        <div class="chart-stat">
-                            <span class="stat-label">Period Change</span>
-                            <span class="stat-value positive" id="chart-change">+8.2%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Today's Trading</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Open</span>
-                            <span class="info-value" id="metric-open">$176.15</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">High</span>
-                            <span class="info-value" id="metric-high">$179.23</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Low</span>
-                            <span class="info-value" id="metric-low">$175.82</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Prev Close</span>
-                            <span class="info-value" id="metric-prevclose">$176.17</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Volume</span>
-                            <span class="info-value" id="metric-volume">52.3M</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Avg Volume</span>
-                            <span class="info-value" id="metric-avgvol">58.2M</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>52 Week Range</h3>
-                    <div class="range-container">
-                        <div class="range-bar">
-                            <div class="range-fill" id="range-fill"></div>
-                            <div class="range-marker" id="range-marker"></div>
-                        </div>
-                        <div class="range-labels">
-                            <span class="range-low" id="metric-52low">$124.17</span>
-                            <span class="range-high" id="metric-52high">$198.23</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Valuation</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Market Cap</span>
-                            <span class="info-value" id="metric-marketcap">$2.89T</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Enterprise Value</span>
-                            <span class="info-value" id="metric-ev">$2.95T</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">P/E Ratio (TTM)</span>
-                            <span class="info-value" id="metric-pe">29.45</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Forward P/E</span>
-                            <span class="info-value" id="metric-forwardpe">26.82</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">PEG Ratio</span>
-                            <span class="info-value" id="metric-peg">2.45</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Price/Sales</span>
-                            <span class="info-value" id="metric-ps">7.52</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Price/Book</span>
-                            <span class="info-value" id="metric-pb">45.82</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">EV/EBITDA</span>
-                            <span class="info-value" id="metric-evebitda">22.15</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Financials (Quarterly)</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Revenue</span>
-                            <span class="info-value" id="metric-revenue">$94.8B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Revenue Growth (YoY)</span>
-                            <span class="info-value positive" id="metric-revgrowth">+2.1%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Gross Profit</span>
-                            <span class="info-value" id="metric-grossprofit">$42.3B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Gross Margin</span>
-                            <span class="info-value" id="metric-grossmargin">44.6%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Operating Income</span>
-                            <span class="info-value" id="metric-opincome">$28.5B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Operating Margin</span>
-                            <span class="info-value" id="metric-opmargin">30.1%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Net Income</span>
-                            <span class="info-value" id="metric-netincome">$23.0B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Profit Margin</span>
-                            <span class="info-value" id="metric-margin">24.3%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Per Share Data</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">EPS (TTM)</span>
-                            <span class="info-value" id="metric-eps">$6.06</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">EPS Growth (YoY)</span>
-                            <span class="info-value positive" id="metric-epsgrowth">+10.8%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Book Value/Share</span>
-                            <span class="info-value" id="metric-bookvalue">$3.90</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Cash/Share</span>
-                            <span class="info-value" id="metric-cashpershare">$4.15</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Dividends & Returns</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Dividend (Annual)</span>
-                            <span class="info-value" id="metric-divannual">$0.96</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Dividend Yield</span>
-                            <span class="info-value" id="metric-divyield">0.51%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Payout Ratio</span>
-                            <span class="info-value" id="metric-payout">15.8%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Ex-Dividend Date</span>
-                            <span class="info-value" id="metric-exdiv">Feb 9, 2024</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">ROE</span>
-                            <span class="info-value" id="metric-roe">147.2%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">ROA</span>
-                            <span class="info-value" id="metric-roa">28.5%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">ROIC</span>
-                            <span class="info-value" id="metric-roic">52.3%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Balance Sheet</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Total Cash</span>
-                            <span class="info-value" id="metric-cash">$65.4B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Total Debt</span>
-                            <span class="info-value" id="metric-debt">$109.3B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Net Debt</span>
-                            <span class="info-value" id="metric-netdebt">$43.9B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Debt/Equity</span>
-                            <span class="info-value" id="metric-debtequity">1.81</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Current Ratio</span>
-                            <span class="info-value" id="metric-currentratio">0.99</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Quick Ratio</span>
-                            <span class="info-value" id="metric-quickratio">0.84</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Trading Information</h3>
-                    <div class="info-grid">
-                        <div class="info-item">
-                            <span class="info-label">Beta</span>
-                            <span class="info-value" id="metric-beta">1.28</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Shares Outstanding</span>
-                            <span class="info-value" id="metric-sharesout">15.6B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Float</span>
-                            <span class="info-value" id="metric-float">15.5B</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Short Interest</span>
-                            <span class="info-value" id="metric-shortint">0.72%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Inst. Ownership</span>
-                            <span class="info-value" id="metric-instown">60.2%</span>
-                        </div>
-                        <div class="info-item">
-                            <span class="info-label">Insider Ownership</span>
-                            <span class="info-value" id="metric-insiderown">0.07%</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section">
-                    <h3>Analyst Ratings</h3>
-                    <div class="analyst-summary">
-                        <div class="analyst-rating">
-                            <span class="rating-label">Consensus</span>
-                            <span class="rating-value buy" id="analyst-rating">Buy</span>
-                        </div>
-                        <div class="analyst-target">
-                            <span class="target-label">Price Target</span>
-                            <span class="target-value" id="analyst-target">$195.50</span>
-                            <span class="target-upside positive" id="analyst-upside">(+9.5% upside)</span>
-                        </div>
-                    </div>
-                    <div class="analyst-breakdown">
-                        <div class="rating-bar">
-                            <div class="rating-segment strong-buy" id="seg-strongbuy" style="width: 35%"></div>
-                            <div class="rating-segment buy" id="seg-buy" style="width: 45%"></div>
-                            <div class="rating-segment hold" id="seg-hold" style="width: 15%"></div>
-                            <div class="rating-segment sell" id="seg-sell" style="width: 5%"></div>
-                            <div class="rating-segment strong-sell" id="seg-strongsell" style="width: 0%"></div>
-                        </div>
-                        <div class="rating-labels">
-                            <span>Strong Buy: <span id="cnt-strongbuy">14</span></span>
-                            <span>Buy: <span id="cnt-buy">18</span></span>
-                            <span>Hold: <span id="cnt-hold">6</span></span>
-                            <span>Sell: <span id="cnt-sell">2</span></span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="info-section company-info">
-                    <h3>About</h3>
-                    <p class="company-description" id="company-description">
-                        Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, Mac, iPad, and wearables, home and accessories. It also provides AppleCare support and cloud services, and operates various platforms including the App Store.
-                    </p>
-                    <div class="company-details">
-                        <div class="detail-item">
-                            <span class="detail-label">Headquarters</span>
-                            <span class="detail-value" id="company-hq">Cupertino, CA</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Employees</span>
-                            <span class="detail-value" id="company-employees">164,000</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Founded</span>
-                            <span class="detail-value" id="company-founded">1976</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">CEO</span>
-                            <span class="detail-value" id="company-ceo">Tim Cook</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    
+    <div id="treemap">
+        <div class="loading-message">
+            <div class="spinner"></div>
+            <div>Loading stock data...</div>
+            <div style="font-size: 12px; margin-top: 5px; color: #666;">Run: python3 fetch_data.py</div>
         </div>
     </div>
-    <div id="tooltip" class="tooltip"></div>
     
-    <script src="data.js"></script>
-    <script src="stockData.js"></script>
-    <script src="api.js"></script>
-    <script src="treemap.js"></script>
-    <script src="stockDetail.js"></script>
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+// Global data
+let sp500Data = null;
+
+// Color scale for performance
+function getColor(change) {
+    if (change === null || change === undefined) return '#444';
+    if (change >= 3) return '#0d5f2a';
+    if (change >= 2) return '#1a8f3e';
+    if (change >= 1) return '#2ecc71';
+    if (change >= 0.5) return '#58d68d';
+    if (change >= 0) return '#8fe0ac';
+    if (change >= -0.5) return '#f5a8a2';
+    if (change >= -1) return '#e67e73';
+    if (change >= -2) return '#e74c3c';
+    if (change >= -3) return '#c0392b';
+    return '#7b241c';
+}
+
+function formatMarketCap(value) {
+    if (value >= 1000) return `$${(value / 1000).toFixed(2)}T`;
+    if (value >= 1) return `$${value.toFixed(0)}B`;
+    return `$${(value * 1000).toFixed(0)}M`;
+}
+
+function formatChange(change) {
+    if (change === null || change === undefined) return '--';
+    const sign = change >= 0 ? '+' : '';
+    return `${sign}${change.toFixed(2)}%`;
+}
+
+// Load JSON data
+async function loadData() {
+    try {
+        const response = await fetch('sp500_data.json');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        sp500Data = await response.json();
+        
+        // Update UI
+        updateStatus();
+        updateIndexTrackers();
+        initTreemap();
+        initSearch();
+        initQuickStats();
+        initKeyboardShortcuts();
+        
+    } catch (error) {
+        console.error('Failed to load data:', error);
+        document.getElementById('treemap').innerHTML = `
+            <div class="error-message">
+                <h2>Data Not Found</h2>
+                <p>Run the Python script to fetch stock data:</p>
+                <p><code>python3 fetch_data.py</code></p>
+                <p style="margin-top: 15px; font-size: 12px;">This will create sp500_data.json with current market data.</p>
+            </div>
+        `;
+        document.getElementById('data-status').textContent = 'No data';
+        document.getElementById('data-status').className = 'data-status offline';
+    }
+}
+
+function updateStatus() {
+    const statusEl = document.getElementById('data-status');
+    const lastUpdatedEl = document.getElementById('last-updated');
+    
+    if (sp500Data && sp500Data.lastUpdated) {
+        const updateTime = new Date(sp500Data.lastUpdated);
+        const now = new Date();
+        const diffMins = Math.floor((now - updateTime) / 60000);
+        
+        if (diffMins < 60) {
+            statusEl.textContent = 'Live';
+            statusEl.className = 'data-status live';
+        } else {
+            statusEl.textContent = `${Math.floor(diffMins / 60)}h ago`;
+            statusEl.className = 'data-status loading';
+        }
+        
+        lastUpdatedEl.textContent = `Updated: ${updateTime.toLocaleTimeString()}`;
+    }
+}
+
+function updateIndexTrackers() {
+    if (!sp500Data || !sp500Data.indices) return;
+    
+    const spyEl = document.getElementById('spy-change');
+    const qqqEl = document.getElementById('qqq-change');
+    
+    if (sp500Data.indices.SPY) {
+        const pct = sp500Data.indices.SPY.changePercent;
+        spyEl.textContent = formatChange(pct);
+        spyEl.className = `index-change ${pct >= 0 ? 'positive' : 'negative'}`;
+    }
+    
+    if (sp500Data.indices.QQQ) {
+        const pct = sp500Data.indices.QQQ.changePercent;
+        qqqEl.textContent = formatChange(pct);
+        qqqEl.className = `index-change ${pct >= 0 ? 'positive' : 'negative'}`;
+    }
+}
+
+function initTreemap() {
+    const container = document.getElementById('treemap');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+    
+    container.innerHTML = '';
+    
+    const svg = d3.select('#treemap')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height);
+    
+    const root = d3.hierarchy(sp500Data)
+        .sum(d => d.marketCap || 0)
+        .sort((a, b) => b.value - a.value);
+    
+    d3.treemap()
+        .size([width, height])
+        .paddingOuter(3)
+        .paddingTop(19)
+        .paddingInner(1)
+        .round(true)(root);
+    
+    const tooltip = d3.select('#tooltip');
+    
+    // Sectors
+    const sectors = svg.selectAll('g.sector')
+        .data(root.children)
+        .join('g')
+        .attr('class', 'sector');
+    
+    sectors.append('rect')
+        .attr('x', d => d.x0)
+        .attr('y', d => d.y0)
+        .attr('width', d => d.x1 - d.x0)
+        .attr('height', d => d.y1 - d.y0)
+        .attr('fill', '#222')
+        .attr('rx', 2);
+    
+    sectors.append('text')
+        .attr('class', 'sector-label')
+        .attr('x', d => d.x0 + 5)
+        .attr('y', d => d.y0 + 14)
+        .text(d => d.data.name)
+        .each(function(d) {
+            const textWidth = d.x1 - d.x0 - 10;
+            const text = d3.select(this);
+            let textContent = d.data.name;
+            while (text.node().getComputedTextLength() > textWidth && textContent.length > 0) {
+                textContent = textContent.slice(0, -1);
+                text.text(textContent + '...');
+            }
+        });
+    
+    // Stock nodes
+    const nodes = svg.selectAll('g.node')
+        .data(root.leaves())
+        .join('g')
+        .attr('class', d => `node ${d.data.change === null ? 'no-data' : ''}`)
+        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+    
+    nodes.append('rect')
+        .attr('width', d => Math.max(0, d.x1 - d.x0))
+        .attr('height', d => Math.max(0, d.y1 - d.y0))
+        .attr('fill', d => getColor(d.data.change))
+        .attr('rx', 2);
+    
+    nodes.append('text')
+        .attr('class', 'ticker')
+        .attr('x', d => (d.x1 - d.x0) / 2)
+        .attr('y', d => (d.y1 - d.y0) / 2 - 2)
+        .text(d => d.data.ticker)
+        .each(function(d) {
+            const nodeWidth = d.x1 - d.x0;
+            const nodeHeight = d.y1 - d.y0;
+            if (nodeWidth < 35 || nodeHeight < 25) {
+                d3.select(this).style('display', 'none');
+            }
+            const fontSize = Math.min(14, Math.max(8, nodeWidth / 5));
+            d3.select(this).style('font-size', fontSize + 'px');
+        });
+    
+    nodes.append('text')
+        .attr('class', 'change')
+        .attr('x', d => (d.x1 - d.x0) / 2)
+        .attr('y', d => (d.y1 - d.y0) / 2 + 12)
+        .text(d => formatChange(d.data.change))
+        .each(function(d) {
+            const nodeWidth = d.x1 - d.x0;
+            const nodeHeight = d.y1 - d.y0;
+            if (nodeWidth < 45 || nodeHeight < 35 || d.data.change === null) {
+                d3.select(this).style('display', 'none');
+            }
+            const fontSize = Math.min(11, Math.max(7, nodeWidth / 6));
+            d3.select(this).style('font-size', fontSize + 'px');
+        });
+    
+    // Tooltip
+    nodes
+        .on('mouseenter', function(event, d) {
+            tooltip.classed('visible', true);
+            const changeClass = d.data.change === null ? '' : (d.data.change >= 0 ? 'positive' : 'negative');
+            const priceText = d.data.price ? `$${d.data.price.toFixed(2)}` : '--';
+            tooltip.html(`
+                <div class="company-name">${d.data.name}</div>
+                <div class="info-row">
+                    <span class="label">Ticker:</span>
+                    <span class="value">${d.data.ticker}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Sector:</span>
+                    <span class="value">${d.parent.data.name}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Price:</span>
+                    <span class="value">${priceText}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Market Cap:</span>
+                    <span class="value">${formatMarketCap(d.data.marketCap)}</span>
+                </div>
+                <div class="info-row">
+                    <span class="label">Change:</span>
+                    <span class="value ${changeClass}">${formatChange(d.data.change)}</span>
+                </div>
+            `);
+        })
+        .on('mousemove', function(event) {
+            const tooltipWidth = tooltip.node().offsetWidth;
+            const tooltipHeight = tooltip.node().offsetHeight;
+            let x = event.pageX + 15;
+            let y = event.pageY - 10;
+            
+            if (x + tooltipWidth > window.innerWidth) x = event.pageX - tooltipWidth - 15;
+            if (y + tooltipHeight > window.innerHeight) y = event.pageY - tooltipHeight - 10;
+            
+            tooltip.style('left', x + 'px').style('top', y + 'px');
+        })
+        .on('mouseleave', function() {
+            tooltip.classed('visible', false);
+        });
+}
+
+// Search functionality
+function initSearch() {
+    const searchInput = document.getElementById('stock-search');
+    const searchResults = document.getElementById('search-results');
+    
+    const allStocks = [];
+    sp500Data.children.forEach(sector => {
+        sector.children.forEach(stock => {
+            allStocks.push({ ...stock, sector: sector.name });
+        });
+    });
+    
+    searchInput.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        
+        if (query.length < 1) {
+            searchResults.classList.remove('visible');
+            return;
+        }
+        
+        const matches = allStocks.filter(stock => 
+            stock.ticker.toLowerCase().includes(query) ||
+            stock.name.toLowerCase().includes(query)
+        ).slice(0, 8);
+        
+        if (matches.length === 0) {
+            searchResults.classList.remove('visible');
+            return;
+        }
+        
+        searchResults.innerHTML = matches.map(stock => {
+            const changeClass = stock.change === null ? '' : (stock.change >= 0 ? 'positive' : 'negative');
+            return `
+                <div class="search-result-item" data-ticker="${stock.ticker}">
+                    <div>
+                        <span class="search-result-ticker">${stock.ticker}</span>
+                        <span class="search-result-name">${stock.name}</span>
+                    </div>
+                    <span class="search-result-change ${changeClass}">${formatChange(stock.change)}</span>
+                </div>
+            `;
+        }).join('');
+        
+        searchResults.classList.add('visible');
+        
+        searchResults.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const ticker = this.dataset.ticker;
+                highlightStock(ticker);
+                searchResults.classList.remove('visible');
+                searchInput.value = '';
+            });
+        });
+    });
+    
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+            searchResults.classList.remove('visible');
+        }
+    });
+}
+
+function highlightStock(ticker) {
+    // Flash the stock node
+    const node = d3.select(`g.node[data-ticker="${ticker}"]`);
+    if (!node.empty()) {
+        node.select('rect')
+            .transition().duration(200).attr('stroke', '#fff').attr('stroke-width', 3)
+            .transition().duration(200).attr('stroke', '#fff').attr('stroke-width', 3)
+            .transition().duration(200).attr('stroke', '#fff').attr('stroke-width', 3)
+            .transition().duration(500).attr('stroke', '#1a1a1a').attr('stroke-width', 1);
+    }
+}
+
+// Quick stats
+function getAllStocks() {
+    const stocks = [];
+    sp500Data.children.forEach(sector => {
+        sector.children.forEach(stock => {
+            stocks.push({ ...stock, sector: sector.name });
+        });
+    });
+    return stocks;
+}
+
+function getTopMovers(type = 'gainers', limit = 10) {
+    const allStocks = getAllStocks().filter(stock => stock.change !== null);
+    if (allStocks.length === 0) return [];
+    allStocks.sort((a, b) => type === 'gainers' ? b.change - a.change : a.change - b.change);
+    return allStocks.slice(0, limit);
+}
+
+function showQuickStats(type) {
+    const panel = document.getElementById('quick-stats-panel');
+    const title = document.getElementById('quick-stats-title');
+    const list = document.getElementById('quick-stats-list');
+    
+    const movers = getTopMovers(type);
+    
+    title.textContent = type === 'gainers' ? 'Top Gainers' : 'Top Losers';
+    title.className = type;
+    
+    if (movers.length === 0) {
+        list.innerHTML = '<div class="quick-stats-empty">No data available</div>';
+    } else {
+        list.innerHTML = movers.map(stock => {
+            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+            return `
+                <div class="quick-stats-item" data-ticker="${stock.ticker}">
+                    <div class="quick-stats-stock">
+                        <span class="quick-stats-ticker">${stock.ticker}</span>
+                        <span class="quick-stats-name">${stock.name}</span>
+                    </div>
+                    <span class="quick-stats-change ${changeClass}">${formatChange(stock.change)}</span>
+                </div>
+            `;
+        }).join('');
+        
+        list.querySelectorAll('.quick-stats-item').forEach(item => {
+            item.addEventListener('click', function() {
+                highlightStock(this.dataset.ticker);
+                panel.classList.remove('visible');
+            });
+        });
+    }
+    
+    panel.classList.add('visible');
+}
+
+function initQuickStats() {
+    const gainersBtn = document.getElementById('show-gainers');
+    const losersBtn = document.getElementById('show-losers');
+    const closeBtn = document.querySelector('.quick-stats-close');
+    const panel = document.getElementById('quick-stats-panel');
+    
+    gainersBtn?.addEventListener('click', (e) => { e.stopPropagation(); showQuickStats('gainers'); });
+    losersBtn?.addEventListener('click', (e) => { e.stopPropagation(); showQuickStats('losers'); });
+    closeBtn?.addEventListener('click', () => panel.classList.remove('visible'));
+    
+    document.addEventListener('click', function(e) {
+        if (panel && !panel.contains(e.target) && !e.target.closest('.stats-btn')) {
+            panel.classList.remove('visible');
+        }
+    });
+}
+
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT') return;
+        
+        switch(e.key.toLowerCase()) {
+            case 'g': showQuickStats('gainers'); break;
+            case 'l': showQuickStats('losers'); break;
+            case '/':
+                e.preventDefault();
+                document.getElementById('stock-search')?.focus();
+                break;
+            case 'escape':
+                document.getElementById('quick-stats-panel')?.classList.remove('visible');
+                break;
+        }
+    });
+}
+
+// Market hours / raccoon
+function updateRaccoon() {
+    const now = new Date();
+    const etStr = now.toLocaleString('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: 'numeric', hour12: false });
+    const [hours, minutes] = etStr.split(':').map(Number);
+    const mins = hours * 60 + minutes;
+    const dayStr = now.toLocaleString('en-US', { timeZone: 'America/New_York', weekday: 'short' });
+    const isWeekday = !['Sat', 'Sun'].includes(dayStr);
+    const isOpen = isWeekday && mins >= 570 && mins < 960;
+    
+    document.getElementById('raccoon-awake').style.display = isOpen ? 'block' : 'none';
+    document.getElementById('raccoon-asleep').style.display = isOpen ? 'none' : 'block';
+    
+    const status = document.getElementById('market-status');
+    status.textContent = isOpen ? 'Market Open' : 'Market Closed';
+    status.className = `market-status ${isOpen ? 'open' : 'closed'}`;
+}
+
+// Resize handler
+let resizeTimeout;
+window.addEventListener('resize', function() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+        if (sp500Data) initTreemap();
+    }, 250);
+});
+
+// Initialize
+updateRaccoon();
+setInterval(updateRaccoon, 60000);
+loadData();
+    </script>
 </body>
 </html>

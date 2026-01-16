@@ -1,0 +1,1597 @@
+{
+  "name": "S&P 500",
+  "lastUpdated": "2026-01-16T15:47:36.619457",
+  "indices": {
+    "SPY": {
+      "name": "S&P 500",
+      "changePercent": -0.08
+    },
+    "QQQ": {
+      "name": "NASDAQ 100",
+      "changePercent": -0.08
+    }
+  },
+  "children": [
+    {
+      "name": "Technology",
+      "children": [
+        {
+          "ticker": "AAPL",
+          "name": "Apple Inc.",
+          "marketCap": 100,
+          "price": 255.53,
+          "change": -1.04
+        },
+        {
+          "ticker": "MSFT",
+          "name": "Microsoft Corp.",
+          "marketCap": 100,
+          "price": 459.86,
+          "change": 0.7
+        },
+        {
+          "ticker": "NVDA",
+          "name": "NVIDIA Corp.",
+          "marketCap": 100,
+          "price": 186.23,
+          "change": -0.44
+        },
+        {
+          "ticker": "AVGO",
+          "name": "Broadcom Inc.",
+          "marketCap": 100,
+          "price": 351.71,
+          "change": 2.53
+        },
+        {
+          "ticker": "ORCL",
+          "name": "Oracle Corp.",
+          "marketCap": 100,
+          "price": 191.09,
+          "change": 0.65
+        },
+        {
+          "ticker": "CRM",
+          "name": "Salesforce Inc.",
+          "marketCap": 100,
+          "price": 227.11,
+          "change": -2.75
+        },
+        {
+          "ticker": "CSCO",
+          "name": "Cisco Systems",
+          "marketCap": 100,
+          "price": 75.19,
+          "change": -0.08
+        },
+        {
+          "ticker": "ACN",
+          "name": "Accenture",
+          "marketCap": 100,
+          "price": 286.21,
+          "change": -0.54
+        },
+        {
+          "ticker": "IBM",
+          "name": "IBM Corp.",
+          "marketCap": 100,
+          "price": 305.67,
+          "change": 2.59
+        },
+        {
+          "ticker": "ADBE",
+          "name": "Adobe Inc.",
+          "marketCap": 100,
+          "price": 296.12,
+          "change": -2.62
+        },
+        {
+          "ticker": "AMD",
+          "name": "AMD Inc.",
+          "marketCap": 100,
+          "price": 231.83,
+          "change": 1.72
+        },
+        {
+          "ticker": "INTC",
+          "name": "Intel Corp.",
+          "marketCap": 100,
+          "price": 46.96,
+          "change": -2.81
+        },
+        {
+          "ticker": "QCOM",
+          "name": "Qualcomm",
+          "marketCap": 100,
+          "price": 159.42,
+          "change": -1.22
+        },
+        {
+          "ticker": "TXN",
+          "name": "Texas Instruments",
+          "marketCap": 100,
+          "price": 191.58,
+          "change": 1.3
+        },
+        {
+          "ticker": "INTU",
+          "name": "Intuit Inc.",
+          "marketCap": 100,
+          "price": 545.29,
+          "change": -1.68
+        },
+        {
+          "ticker": "AMAT",
+          "name": "Applied Materials",
+          "marketCap": 100,
+          "price": 327.01,
+          "change": 2.49
+        },
+        {
+          "ticker": "NOW",
+          "name": "ServiceNow",
+          "marketCap": 100,
+          "price": 127.31,
+          "change": -2.94
+        },
+        {
+          "ticker": "MU",
+          "name": "Micron Technology",
+          "marketCap": 100,
+          "price": 362.75,
+          "change": 7.76
+        },
+        {
+          "ticker": "LRCX",
+          "name": "Lam Research",
+          "marketCap": 100,
+          "price": 222.96,
+          "change": 2.52
+        },
+        {
+          "ticker": "ADI",
+          "name": "Analog Devices",
+          "marketCap": 100,
+          "price": 300.25,
+          "change": -0.61
+        }
+      ]
+    },
+    {
+      "name": "Healthcare",
+      "children": [
+        {
+          "ticker": "UNH",
+          "name": "UnitedHealth Group",
+          "marketCap": 100,
+          "price": 331.02,
+          "change": -2.34
+        },
+        {
+          "ticker": "JNJ",
+          "name": "Johnson & Johnson",
+          "marketCap": 100,
+          "price": 218.66,
+          "change": -0.41
+        },
+        {
+          "ticker": "LLY",
+          "name": "Eli Lilly",
+          "marketCap": 100,
+          "price": 1038.4,
+          "change": 0.53
+        },
+        {
+          "ticker": "MRK",
+          "name": "Merck & Co.",
+          "marketCap": 100,
+          "price": 108.83,
+          "change": -1.93
+        },
+        {
+          "ticker": "ABBV",
+          "name": "AbbVie Inc.",
+          "marketCap": 100,
+          "price": 214.35,
+          "change": -1.11
+        },
+        {
+          "ticker": "PFE",
+          "name": "Pfizer Inc.",
+          "marketCap": 100,
+          "price": 25.65,
+          "change": -0.93
+        },
+        {
+          "ticker": "TMO",
+          "name": "Thermo Fisher",
+          "marketCap": 100,
+          "price": 618.72,
+          "change": -0.95
+        },
+        {
+          "ticker": "ABT",
+          "name": "Abbott Labs",
+          "marketCap": 100,
+          "price": 121.76,
+          "change": -1.43
+        },
+        {
+          "ticker": "DHR",
+          "name": "Danaher Corp.",
+          "marketCap": 100,
+          "price": 235.99,
+          "change": -1.63
+        },
+        {
+          "ticker": "BMY",
+          "name": "Bristol-Myers",
+          "marketCap": 100,
+          "price": 55.26,
+          "change": -2.4
+        },
+        {
+          "ticker": "AMGN",
+          "name": "Amgen Inc.",
+          "marketCap": 100,
+          "price": 330.41,
+          "change": 0.12
+        },
+        {
+          "ticker": "MDT",
+          "name": "Medtronic",
+          "marketCap": 100,
+          "price": 96.76,
+          "change": -2.26
+        },
+        {
+          "ticker": "GILD",
+          "name": "Gilead Sciences",
+          "marketCap": 100,
+          "price": 124.91,
+          "change": 3.01
+        },
+        {
+          "ticker": "ISRG",
+          "name": "Intuitive Surgical",
+          "marketCap": 100,
+          "price": 535.0,
+          "change": -1.17
+        },
+        {
+          "ticker": "VRTX",
+          "name": "Vertex Pharma",
+          "marketCap": 100,
+          "price": 441.36,
+          "change": 0.56
+        },
+        {
+          "ticker": "CVS",
+          "name": "CVS Health",
+          "marketCap": 100,
+          "price": 78.6,
+          "change": -3.39
+        },
+        {
+          "ticker": "CI",
+          "name": "Cigna Group",
+          "marketCap": 100,
+          "price": 272.21,
+          "change": -2.06
+        },
+        {
+          "ticker": "ELV",
+          "name": "Elevance Health",
+          "marketCap": 100,
+          "price": 374.87,
+          "change": -1.85
+        },
+        {
+          "ticker": "SYK",
+          "name": "Stryker Corp.",
+          "marketCap": 100,
+          "price": 363.78,
+          "change": 0.36
+        },
+        {
+          "ticker": "REGN",
+          "name": "Regeneron",
+          "marketCap": 100,
+          "price": 733.04,
+          "change": -1.2
+        }
+      ]
+    },
+    {
+      "name": "Financials",
+      "children": [
+        {
+          "ticker": "BRK-B",
+          "name": "Berkshire Hathaway",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "JPM",
+          "name": "JPMorgan Chase",
+          "marketCap": 100,
+          "price": 312.47,
+          "change": 1.04
+        },
+        {
+          "ticker": "V",
+          "name": "Visa Inc.",
+          "marketCap": 100,
+          "price": 328.3,
+          "change": 0.17
+        },
+        {
+          "ticker": "MA",
+          "name": "Mastercard",
+          "marketCap": 100,
+          "price": 539.49,
+          "change": -0.58
+        },
+        {
+          "ticker": "BAC",
+          "name": "Bank of America",
+          "marketCap": 100,
+          "price": 52.97,
+          "change": 0.72
+        },
+        {
+          "ticker": "WFC",
+          "name": "Wells Fargo",
+          "marketCap": 100,
+          "price": 88.38,
+          "change": -0.65
+        },
+        {
+          "ticker": "GS",
+          "name": "Goldman Sachs",
+          "marketCap": 100,
+          "price": 962.0,
+          "change": -1.42
+        },
+        {
+          "ticker": "MS",
+          "name": "Morgan Stanley",
+          "marketCap": 100,
+          "price": 189.09,
+          "change": -1.12
+        },
+        {
+          "ticker": "BLK",
+          "name": "BlackRock",
+          "marketCap": 100,
+          "price": 1163.17,
+          "change": 0.56
+        },
+        {
+          "ticker": "AXP",
+          "name": "American Express",
+          "marketCap": 100,
+          "price": 364.79,
+          "change": 2.08
+        },
+        {
+          "ticker": "SPGI",
+          "name": "S&P Global",
+          "marketCap": 100,
+          "price": 546.35,
+          "change": 0.17
+        },
+        {
+          "ticker": "C",
+          "name": "Citigroup",
+          "marketCap": 100,
+          "price": 118.04,
+          "change": 0.49
+        },
+        {
+          "ticker": "SCHW",
+          "name": "Charles Schwab",
+          "marketCap": 100,
+          "price": 103.82,
+          "change": 1.03
+        },
+        {
+          "ticker": "CB",
+          "name": "Chubb Ltd.",
+          "marketCap": 100,
+          "price": 300.77,
+          "change": -0.11
+        },
+        {
+          "ticker": "PGR",
+          "name": "Progressive Corp.",
+          "marketCap": 100,
+          "price": 202.37,
+          "change": -0.57
+        },
+        {
+          "ticker": "MMC",
+          "name": "Marsh McLennan",
+          "marketCap": 100,
+          "price": 182.26,
+          "change": -0.55
+        },
+        {
+          "ticker": "ICE",
+          "name": "Intercontinental Ex",
+          "marketCap": 100,
+          "price": 173.98,
+          "change": 0.4
+        },
+        {
+          "ticker": "USB",
+          "name": "U.S. Bancorp",
+          "marketCap": 100,
+          "price": 54.4,
+          "change": 0.83
+        },
+        {
+          "ticker": "AON",
+          "name": "Aon plc",
+          "marketCap": 100,
+          "price": 343.86,
+          "change": -0.28
+        },
+        {
+          "ticker": "CME",
+          "name": "CME Group",
+          "marketCap": 100,
+          "price": 279.5,
+          "change": 2.53
+        }
+      ]
+    },
+    {
+      "name": "Consumer Discretionary",
+      "children": [
+        {
+          "ticker": "AMZN",
+          "name": "Amazon.com",
+          "marketCap": 100,
+          "price": 239.12,
+          "change": 0.39
+        },
+        {
+          "ticker": "TSLA",
+          "name": "Tesla Inc.",
+          "marketCap": 100,
+          "price": 437.5,
+          "change": -0.24
+        },
+        {
+          "ticker": "HD",
+          "name": "Home Depot",
+          "marketCap": 100,
+          "price": 380.17,
+          "change": 0.27
+        },
+        {
+          "ticker": "MCD",
+          "name": "McDonald's Corp.",
+          "marketCap": 100,
+          "price": 307.43,
+          "change": -0.39
+        },
+        {
+          "ticker": "NKE",
+          "name": "Nike Inc.",
+          "marketCap": 100,
+          "price": 64.38,
+          "change": -0.33
+        },
+        {
+          "ticker": "LOW",
+          "name": "Lowe's Cos.",
+          "marketCap": 100,
+          "price": 277.55,
+          "change": 0.19
+        },
+        {
+          "ticker": "SBUX",
+          "name": "Starbucks",
+          "marketCap": 100,
+          "price": 92.99,
+          "change": -0.31
+        },
+        {
+          "ticker": "TJX",
+          "name": "TJX Companies",
+          "marketCap": 100,
+          "price": 157.38,
+          "change": 0.78
+        },
+        {
+          "ticker": "BKNG",
+          "name": "Booking Holdings",
+          "marketCap": 100,
+          "price": 5115.91,
+          "change": -1.49
+        },
+        {
+          "ticker": "CMG",
+          "name": "Chipotle",
+          "marketCap": 100,
+          "price": 39.96,
+          "change": -0.99
+        },
+        {
+          "ticker": "MAR",
+          "name": "Marriott Intl",
+          "marketCap": 100,
+          "price": 325.88,
+          "change": 0.03
+        },
+        {
+          "ticker": "ORLY",
+          "name": "O'Reilly Auto",
+          "marketCap": 100,
+          "price": 94.7,
+          "change": 1.13
+        },
+        {
+          "ticker": "GM",
+          "name": "General Motors",
+          "marketCap": 100,
+          "price": 80.82,
+          "change": -0.11
+        },
+        {
+          "ticker": "F",
+          "name": "Ford Motor",
+          "marketCap": 100,
+          "price": 13.6,
+          "change": -1.52
+        },
+        {
+          "ticker": "AZO",
+          "name": "AutoZone",
+          "marketCap": 100,
+          "price": 3522.02,
+          "change": 1.63
+        },
+        {
+          "ticker": "ROST",
+          "name": "Ross Stores",
+          "marketCap": 100,
+          "price": 192.36,
+          "change": -0.74
+        },
+        {
+          "ticker": "DHI",
+          "name": "D.R. Horton",
+          "marketCap": 100,
+          "price": 155.96,
+          "change": -3.13
+        },
+        {
+          "ticker": "LEN",
+          "name": "Lennar Corp.",
+          "marketCap": 100,
+          "price": 118.59,
+          "change": -2.99
+        },
+        {
+          "ticker": "YUM",
+          "name": "Yum! Brands",
+          "marketCap": 100,
+          "price": 160.26,
+          "change": -0.49
+        },
+        {
+          "ticker": "EBAY",
+          "name": "eBay Inc.",
+          "marketCap": 100,
+          "price": 93.03,
+          "change": -3.16
+        }
+      ]
+    },
+    {
+      "name": "Communication Services",
+      "children": [
+        {
+          "ticker": "GOOGL",
+          "name": "Alphabet Inc.",
+          "marketCap": 100,
+          "price": 330.0,
+          "change": -0.84
+        },
+        {
+          "ticker": "META",
+          "name": "Meta Platforms",
+          "marketCap": 100,
+          "price": 620.25,
+          "change": -0.09
+        },
+        {
+          "ticker": "NFLX",
+          "name": "Netflix Inc.",
+          "marketCap": 100,
+          "price": 88.0,
+          "change": -0.06
+        },
+        {
+          "ticker": "DIS",
+          "name": "Walt Disney",
+          "marketCap": 100,
+          "price": 111.2,
+          "change": -1.95
+        },
+        {
+          "ticker": "CMCSA",
+          "name": "Comcast Corp.",
+          "marketCap": 100,
+          "price": 27.82,
+          "change": -1.87
+        },
+        {
+          "ticker": "VZ",
+          "name": "Verizon",
+          "marketCap": 100,
+          "price": 38.91,
+          "change": -1.14
+        },
+        {
+          "ticker": "T",
+          "name": "AT&T Inc.",
+          "marketCap": 100,
+          "price": 23.49,
+          "change": -1.01
+        },
+        {
+          "ticker": "TMUS",
+          "name": "T-Mobile US",
+          "marketCap": 100,
+          "price": 186.32,
+          "change": -2.28
+        },
+        {
+          "ticker": "CHTR",
+          "name": "Charter Comm.",
+          "marketCap": 100,
+          "price": 189.76,
+          "change": -2.49
+        },
+        {
+          "ticker": "WBD",
+          "name": "Warner Bros.",
+          "marketCap": 100,
+          "price": 28.58,
+          "change": 0.32
+        },
+        {
+          "ticker": "EA",
+          "name": "Electronic Arts",
+          "marketCap": 100,
+          "price": 204.25,
+          "change": 0.05
+        },
+        {
+          "ticker": "TTWO",
+          "name": "Take-Two",
+          "marketCap": 100,
+          "price": 240.14,
+          "change": -1.72
+        },
+        {
+          "ticker": "OMC",
+          "name": "Omnicom Group",
+          "marketCap": 100,
+          "price": 79.79,
+          "change": -1.3
+        },
+        {
+          "ticker": "IPG",
+          "name": "Interpublic",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "PARA",
+          "name": "Paramount",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "FOX",
+          "name": "Fox Corp.",
+          "marketCap": 100,
+          "price": 65.42,
+          "change": -0.3
+        },
+        {
+          "ticker": "NWSA",
+          "name": "News Corp.",
+          "marketCap": 100,
+          "price": 26.25,
+          "change": -1.69
+        },
+        {
+          "ticker": "LYV",
+          "name": "Live Nation",
+          "marketCap": 100,
+          "price": 144.43,
+          "change": -0.89
+        },
+        {
+          "ticker": "MTCH",
+          "name": "Match Group",
+          "marketCap": 100,
+          "price": 31.33,
+          "change": -0.84
+        }
+      ]
+    },
+    {
+      "name": "Consumer Staples",
+      "children": [
+        {
+          "ticker": "WMT",
+          "name": "Walmart Inc.",
+          "marketCap": 100,
+          "price": 119.7,
+          "change": 0.42
+        },
+        {
+          "ticker": "PG",
+          "name": "Procter & Gamble",
+          "marketCap": 100,
+          "price": 144.53,
+          "change": -0.07
+        },
+        {
+          "ticker": "COST",
+          "name": "Costco",
+          "marketCap": 100,
+          "price": 963.61,
+          "change": 0.72
+        },
+        {
+          "ticker": "KO",
+          "name": "Coca-Cola",
+          "marketCap": 100,
+          "price": 70.44,
+          "change": -0.06
+        },
+        {
+          "ticker": "PEP",
+          "name": "PepsiCo",
+          "marketCap": 100,
+          "price": 146.32,
+          "change": -0.17
+        },
+        {
+          "ticker": "PM",
+          "name": "Philip Morris",
+          "marketCap": 100,
+          "price": 173.62,
+          "change": 0.61
+        },
+        {
+          "ticker": "MO",
+          "name": "Altria Group",
+          "marketCap": 100,
+          "price": 61.76,
+          "change": 0.29
+        },
+        {
+          "ticker": "MDLZ",
+          "name": "Mondelez",
+          "marketCap": 100,
+          "price": 57.24,
+          "change": -0.1
+        },
+        {
+          "ticker": "CL",
+          "name": "Colgate-Palmolive",
+          "marketCap": 100,
+          "price": 84.52,
+          "change": 0.21
+        },
+        {
+          "ticker": "EL",
+          "name": "Estee Lauder",
+          "marketCap": 100,
+          "price": 115.05,
+          "change": -0.52
+        },
+        {
+          "ticker": "KMB",
+          "name": "Kimberly-Clark",
+          "marketCap": 100,
+          "price": 99.32,
+          "change": -1.09
+        },
+        {
+          "ticker": "GIS",
+          "name": "General Mills",
+          "marketCap": 100,
+          "price": 44.51,
+          "change": -2.39
+        },
+        {
+          "ticker": "SYY",
+          "name": "Sysco Corp.",
+          "marketCap": 100,
+          "price": 78.8,
+          "change": -0.48
+        },
+        {
+          "ticker": "HSY",
+          "name": "Hershey Co.",
+          "marketCap": 100,
+          "price": 197.76,
+          "change": -1.65
+        },
+        {
+          "ticker": "K",
+          "name": "Kellanova",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "KHC",
+          "name": "Kraft Heinz",
+          "marketCap": 100,
+          "price": 23.53,
+          "change": -2.93
+        },
+        {
+          "ticker": "STZ",
+          "name": "Constellation Brands",
+          "marketCap": 100,
+          "price": 156.64,
+          "change": -1.33
+        },
+        {
+          "ticker": "KR",
+          "name": "Kroger Co.",
+          "marketCap": 100,
+          "price": 63.19,
+          "change": 1.12
+        },
+        {
+          "ticker": "WBA",
+          "name": "Walgreens Boots",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "CAG",
+          "name": "Conagra Brands",
+          "marketCap": 100,
+          "price": 16.96,
+          "change": -2.36
+        }
+      ]
+    },
+    {
+      "name": "Energy",
+      "children": [
+        {
+          "ticker": "XOM",
+          "name": "Exxon Mobil",
+          "marketCap": 100,
+          "price": 129.89,
+          "change": 0.59
+        },
+        {
+          "ticker": "CVX",
+          "name": "Chevron Corp.",
+          "marketCap": 100,
+          "price": 166.26,
+          "change": 0.06
+        },
+        {
+          "ticker": "COP",
+          "name": "ConocoPhillips",
+          "marketCap": 100,
+          "price": 98.19,
+          "change": -0.75
+        },
+        {
+          "ticker": "EOG",
+          "name": "EOG Resources",
+          "marketCap": 100,
+          "price": 105.32,
+          "change": -2.5
+        },
+        {
+          "ticker": "SLB",
+          "name": "Schlumberger",
+          "marketCap": 100,
+          "price": 46.73,
+          "change": 0.34
+        },
+        {
+          "ticker": "MPC",
+          "name": "Marathon Petroleum",
+          "marketCap": 100,
+          "price": 175.63,
+          "change": -1.1
+        },
+        {
+          "ticker": "PXD",
+          "name": "Pioneer Natural",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "PSX",
+          "name": "Phillips 66",
+          "marketCap": 100,
+          "price": 138.28,
+          "change": -1.24
+        },
+        {
+          "ticker": "VLO",
+          "name": "Valero Energy",
+          "marketCap": 100,
+          "price": 183.46,
+          "change": -0.61
+        },
+        {
+          "ticker": "OXY",
+          "name": "Occidental Petro",
+          "marketCap": 100,
+          "price": 42.7,
+          "change": -1.09
+        },
+        {
+          "ticker": "WMB",
+          "name": "Williams Cos.",
+          "marketCap": 100,
+          "price": 61.55,
+          "change": 2.09
+        },
+        {
+          "ticker": "KMI",
+          "name": "Kinder Morgan",
+          "marketCap": 100,
+          "price": 27.96,
+          "change": 2.01
+        },
+        {
+          "ticker": "HAL",
+          "name": "Halliburton",
+          "marketCap": 100,
+          "price": 32.57,
+          "change": -0.64
+        },
+        {
+          "ticker": "DVN",
+          "name": "Devon Energy",
+          "marketCap": 100,
+          "price": 36.2,
+          "change": -0.33
+        },
+        {
+          "ticker": "BKR",
+          "name": "Baker Hughes",
+          "marketCap": 100,
+          "price": 51.75,
+          "change": -0.48
+        },
+        {
+          "ticker": "FANG",
+          "name": "Diamondback Energy",
+          "marketCap": 100,
+          "price": 151.28,
+          "change": 0.3
+        },
+        {
+          "ticker": "HES",
+          "name": "Hess Corp.",
+          "marketCap": 50,
+          "price": null,
+          "change": null
+        },
+        {
+          "ticker": "TRGP",
+          "name": "Targa Resources",
+          "marketCap": 100,
+          "price": 185.35,
+          "change": 1.88
+        },
+        {
+          "ticker": "OKE",
+          "name": "ONEOK Inc.",
+          "marketCap": 100,
+          "price": 74.4,
+          "change": 1.43
+        }
+      ]
+    },
+    {
+      "name": "Industrials",
+      "children": [
+        {
+          "ticker": "GE",
+          "name": "GE Aerospace",
+          "marketCap": 100,
+          "price": 325.12,
+          "change": 1.62
+        },
+        {
+          "ticker": "CAT",
+          "name": "Caterpillar",
+          "marketCap": 100,
+          "price": 646.89,
+          "change": -0.04
+        },
+        {
+          "ticker": "UNP",
+          "name": "Union Pacific",
+          "marketCap": 100,
+          "price": 229.49,
+          "change": -0.44
+        },
+        {
+          "ticker": "RTX",
+          "name": "RTX Corp.",
+          "marketCap": 100,
+          "price": 201.92,
+          "change": 1.05
+        },
+        {
+          "ticker": "HON",
+          "name": "Honeywell",
+          "marketCap": 100,
+          "price": 219.39,
+          "change": 2.03
+        },
+        {
+          "ticker": "BA",
+          "name": "Boeing Co.",
+          "marketCap": 100,
+          "price": 247.68,
+          "change": -0.02
+        },
+        {
+          "ticker": "DE",
+          "name": "Deere & Co.",
+          "marketCap": 100,
+          "price": 514.4,
+          "change": -0.12
+        },
+        {
+          "ticker": "LMT",
+          "name": "Lockheed Martin",
+          "marketCap": 100,
+          "price": 582.43,
+          "change": 0.79
+        },
+        {
+          "ticker": "UPS",
+          "name": "United Parcel",
+          "marketCap": 100,
+          "price": 106.91,
+          "change": -1.57
+        },
+        {
+          "ticker": "ADP",
+          "name": "ADP Inc.",
+          "marketCap": 100,
+          "price": 260.44,
+          "change": 0.09
+        },
+        {
+          "ticker": "ETN",
+          "name": "Eaton Corp.",
+          "marketCap": 100,
+          "price": 343.75,
+          "change": 3.09
+        },
+        {
+          "ticker": "NOC",
+          "name": "Northrop Grumman",
+          "marketCap": 100,
+          "price": 666.9,
+          "change": 1.88
+        },
+        {
+          "ticker": "GD",
+          "name": "General Dynamics",
+          "marketCap": 100,
+          "price": 367.38,
+          "change": -0.36
+        },
+        {
+          "ticker": "WM",
+          "name": "Waste Management",
+          "marketCap": 100,
+          "price": 221.23,
+          "change": 0.62
+        },
+        {
+          "ticker": "ITW",
+          "name": "Illinois Tool Works",
+          "marketCap": 100,
+          "price": 263.47,
+          "change": 0.6
+        },
+        {
+          "ticker": "FDX",
+          "name": "FedEx Corp.",
+          "marketCap": 100,
+          "price": 308.18,
+          "change": -1.59
+        },
+        {
+          "ticker": "EMR",
+          "name": "Emerson Electric",
+          "marketCap": 100,
+          "price": 149.46,
+          "change": 0.97
+        },
+        {
+          "ticker": "NSC",
+          "name": "Norfolk Southern",
+          "marketCap": 100,
+          "price": 290.63,
+          "change": -0.05
+        },
+        {
+          "ticker": "CSX",
+          "name": "CSX Corp.",
+          "marketCap": 100,
+          "price": 36.25,
+          "change": -0.14
+        },
+        {
+          "ticker": "PH",
+          "name": "Parker Hannifin",
+          "marketCap": 100,
+          "price": 944.27,
+          "change": -0.03
+        }
+      ]
+    },
+    {
+      "name": "Utilities",
+      "children": [
+        {
+          "ticker": "NEE",
+          "name": "NextEra Energy",
+          "marketCap": 100,
+          "price": 83.63,
+          "change": 1.75
+        },
+        {
+          "ticker": "SO",
+          "name": "Southern Co.",
+          "marketCap": 100,
+          "price": 88.9,
+          "change": 0.14
+        },
+        {
+          "ticker": "DUK",
+          "name": "Duke Energy",
+          "marketCap": 100,
+          "price": 119.22,
+          "change": 0.27
+        },
+        {
+          "ticker": "SRE",
+          "name": "Sempra Energy",
+          "marketCap": 100,
+          "price": 92.55,
+          "change": 1.07
+        },
+        {
+          "ticker": "AEP",
+          "name": "American Electric",
+          "marketCap": 100,
+          "price": 119.96,
+          "change": 0.47
+        },
+        {
+          "ticker": "D",
+          "name": "Dominion Energy",
+          "marketCap": 100,
+          "price": 61.13,
+          "change": 1.31
+        },
+        {
+          "ticker": "EXC",
+          "name": "Exelon Corp.",
+          "marketCap": 100,
+          "price": 44.73,
+          "change": 1.31
+        },
+        {
+          "ticker": "XEL",
+          "name": "Xcel Energy",
+          "marketCap": 100,
+          "price": 75.61,
+          "change": 0.33
+        },
+        {
+          "ticker": "PCG",
+          "name": "PG&E Corp.",
+          "marketCap": 100,
+          "price": 15.61,
+          "change": -1.08
+        },
+        {
+          "ticker": "ED",
+          "name": "Con Edison",
+          "marketCap": 100,
+          "price": 103.81,
+          "change": 1.2
+        },
+        {
+          "ticker": "WEC",
+          "name": "WEC Energy",
+          "marketCap": 100,
+          "price": 108.59,
+          "change": 0.4
+        },
+        {
+          "ticker": "EIX",
+          "name": "Edison Intl",
+          "marketCap": 100,
+          "price": 62.39,
+          "change": 1.41
+        },
+        {
+          "ticker": "AWK",
+          "name": "American Water",
+          "marketCap": 100,
+          "price": 133.34,
+          "change": -0.01
+        },
+        {
+          "ticker": "DTE",
+          "name": "DTE Energy",
+          "marketCap": 100,
+          "price": 135.51,
+          "change": 0.67
+        },
+        {
+          "ticker": "PPL",
+          "name": "PPL Corp.",
+          "marketCap": 100,
+          "price": 36.83,
+          "change": 3.14
+        },
+        {
+          "ticker": "ES",
+          "name": "Eversource",
+          "marketCap": 100,
+          "price": 70.11,
+          "change": 0.6
+        },
+        {
+          "ticker": "FE",
+          "name": "FirstEnergy",
+          "marketCap": 100,
+          "price": 47.34,
+          "change": 1.65
+        },
+        {
+          "ticker": "AEE",
+          "name": "Ameren Corp.",
+          "marketCap": 100,
+          "price": 104.0,
+          "change": 0.74
+        },
+        {
+          "ticker": "CMS",
+          "name": "CMS Energy",
+          "marketCap": 100,
+          "price": 71.68,
+          "change": 0.56
+        },
+        {
+          "ticker": "CNP",
+          "name": "CenterPoint",
+          "marketCap": 100,
+          "price": 39.71,
+          "change": 1.02
+        }
+      ]
+    },
+    {
+      "name": "Real Estate",
+      "children": [
+        {
+          "ticker": "PLD",
+          "name": "Prologis",
+          "marketCap": 100,
+          "price": 133.21,
+          "change": 0.35
+        },
+        {
+          "ticker": "AMT",
+          "name": "American Tower",
+          "marketCap": 100,
+          "price": 183.57,
+          "change": 1.11
+        },
+        {
+          "ticker": "EQIX",
+          "name": "Equinix",
+          "marketCap": 100,
+          "price": 801.78,
+          "change": -0.0
+        },
+        {
+          "ticker": "CCI",
+          "name": "Crown Castle",
+          "marketCap": 100,
+          "price": 90.87,
+          "change": 0.51
+        },
+        {
+          "ticker": "PSA",
+          "name": "Public Storage",
+          "marketCap": 100,
+          "price": 293.89,
+          "change": 0.29
+        },
+        {
+          "ticker": "SPG",
+          "name": "Simon Property",
+          "marketCap": 100,
+          "price": 184.92,
+          "change": 1.43
+        },
+        {
+          "ticker": "WELL",
+          "name": "Welltower",
+          "marketCap": 100,
+          "price": 191.38,
+          "change": 1.7
+        },
+        {
+          "ticker": "DLR",
+          "name": "Digital Realty",
+          "marketCap": 100,
+          "price": 163.6,
+          "change": 1.89
+        },
+        {
+          "ticker": "O",
+          "name": "Realty Income",
+          "marketCap": 100,
+          "price": 61.42,
+          "change": 1.15
+        },
+        {
+          "ticker": "VICI",
+          "name": "VICI Properties",
+          "marketCap": 100,
+          "price": 28.98,
+          "change": 1.97
+        },
+        {
+          "ticker": "AVB",
+          "name": "AvalonBay",
+          "marketCap": 100,
+          "price": 182.42,
+          "change": 0.9
+        },
+        {
+          "ticker": "EQR",
+          "name": "Equity Residential",
+          "marketCap": 100,
+          "price": 62.04,
+          "change": 1.42
+        },
+        {
+          "ticker": "SBAC",
+          "name": "SBA Comm.",
+          "marketCap": 100,
+          "price": 194.11,
+          "change": 1.1
+        },
+        {
+          "ticker": "WY",
+          "name": "Weyerhaeuser",
+          "marketCap": 100,
+          "price": 27.06,
+          "change": 0.97
+        },
+        {
+          "ticker": "ARE",
+          "name": "Alexandria RE",
+          "marketCap": 100,
+          "price": 57.89,
+          "change": 1.1
+        },
+        {
+          "ticker": "EXR",
+          "name": "Extra Space",
+          "marketCap": 100,
+          "price": 148.87,
+          "change": 1.18
+        },
+        {
+          "ticker": "MAA",
+          "name": "Mid-America Apt",
+          "marketCap": 100,
+          "price": 137.09,
+          "change": 1.22
+        },
+        {
+          "ticker": "VTR",
+          "name": "Ventas Inc.",
+          "marketCap": 100,
+          "price": 78.45,
+          "change": 1.99
+        },
+        {
+          "ticker": "IRM",
+          "name": "Iron Mountain",
+          "marketCap": 100,
+          "price": 95.93,
+          "change": 3.52
+        },
+        {
+          "ticker": "CBRE",
+          "name": "CBRE Group",
+          "marketCap": 100,
+          "price": 171.59,
+          "change": 0.44
+        }
+      ]
+    },
+    {
+      "name": "Materials",
+      "children": [
+        {
+          "ticker": "LIN",
+          "name": "Linde plc",
+          "marketCap": 100,
+          "price": 438.96,
+          "change": -0.25
+        },
+        {
+          "ticker": "APD",
+          "name": "Air Products",
+          "marketCap": 100,
+          "price": 267.53,
+          "change": 0.58
+        },
+        {
+          "ticker": "SHW",
+          "name": "Sherwin-Williams",
+          "marketCap": 100,
+          "price": 357.83,
+          "change": 0.48
+        },
+        {
+          "ticker": "FCX",
+          "name": "Freeport-McMoRan",
+          "marketCap": 100,
+          "price": 58.71,
+          "change": -2.08
+        },
+        {
+          "ticker": "ECL",
+          "name": "Ecolab Inc.",
+          "marketCap": 100,
+          "price": 277.07,
+          "change": -0.24
+        },
+        {
+          "ticker": "NUE",
+          "name": "Nucor Corp.",
+          "marketCap": 100,
+          "price": 174.39,
+          "change": -0.23
+        },
+        {
+          "ticker": "NEM",
+          "name": "Newmont Corp.",
+          "marketCap": 100,
+          "price": 114.12,
+          "change": -0.08
+        },
+        {
+          "ticker": "DOW",
+          "name": "Dow Inc.",
+          "marketCap": 100,
+          "price": 27.57,
+          "change": -1.32
+        },
+        {
+          "ticker": "CTVA",
+          "name": "Corteva",
+          "marketCap": 100,
+          "price": 69.64,
+          "change": -1.22
+        },
+        {
+          "ticker": "DD",
+          "name": "DuPont",
+          "marketCap": 100,
+          "price": 42.86,
+          "change": -1.22
+        },
+        {
+          "ticker": "PPG",
+          "name": "PPG Industries",
+          "marketCap": 100,
+          "price": 110.22,
+          "change": 0.14
+        },
+        {
+          "ticker": "VMC",
+          "name": "Vulcan Materials",
+          "marketCap": 100,
+          "price": 305.97,
+          "change": 1.41
+        },
+        {
+          "ticker": "MLM",
+          "name": "Martin Marietta",
+          "marketCap": 100,
+          "price": 651.66,
+          "change": 1.67
+        },
+        {
+          "ticker": "ALB",
+          "name": "Albemarle",
+          "marketCap": 100,
+          "price": 163.04,
+          "change": -6.18
+        },
+        {
+          "ticker": "IFF",
+          "name": "IFF",
+          "marketCap": 100,
+          "price": 71.68,
+          "change": 1.2
+        },
+        {
+          "ticker": "LYB",
+          "name": "LyondellBasell",
+          "marketCap": 100,
+          "price": 50.91,
+          "change": 0.06
+        },
+        {
+          "ticker": "CF",
+          "name": "CF Industries",
+          "marketCap": 100,
+          "price": 86.75,
+          "change": 0.17
+        },
+        {
+          "ticker": "MOS",
+          "name": "Mosaic Co.",
+          "marketCap": 100,
+          "price": 26.35,
+          "change": -4.46
+        },
+        {
+          "ticker": "CE",
+          "name": "Celanese",
+          "marketCap": 100,
+          "price": 46.94,
+          "change": -0.42
+        },
+        {
+          "ticker": "BALL",
+          "name": "Ball Corp.",
+          "marketCap": 100,
+          "price": 56.08,
+          "change": 0.34
+        }
+      ]
+    }
+  ]
+}
