@@ -3,8 +3,7 @@
 
 const CORS_PROXIES = [
     'https://corsproxy.io/?',
-    'https://api.allorigins.win/raw?url=',
-    'https://cors-anywhere.herokuapp.com/'
+    'https://api.allorigins.win/raw?url='
 ];
 
 let currentProxyIndex = 0;
@@ -19,34 +18,54 @@ const apiCache = {
     lastUpdate: {}
 };
 
-const CACHE_DURATION = 60000; // 1 minute cache
+const CACHE_DURATION = 300000; // 5 minute cache (increased for reliability)
 
 // Try fetching with different proxies
 async function fetchWithProxy(url) {
+    const errors = [];
+    
     for (let i = 0; i < CORS_PROXIES.length; i++) {
         const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
         const proxy = CORS_PROXIES[proxyIndex];
         
         try {
             const proxyUrl = `${proxy}${encodeURIComponent(url)}`;
-            console.log(`Trying proxy ${proxyIndex}: ${proxy}`);
+            console.log(`Trying proxy ${proxyIndex}:`, proxyUrl.substring(0, 80) + '...');
+            
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000);
             
             const response = await fetch(proxyUrl, {
                 headers: {
                     'Accept': 'application/json'
-                }
+                },
+                signal: controller.signal
             });
             
+            clearTimeout(timeoutId);
+            
             if (response.ok) {
-                currentProxyIndex = proxyIndex; // Remember working proxy
-                return await response.json();
+                const text = await response.text();
+                try {
+                    const data = JSON.parse(text);
+                    currentProxyIndex = proxyIndex; // Remember working proxy
+                    return data;
+                } catch (parseError) {
+                    console.log(`Proxy ${proxyIndex} returned invalid JSON`);
+                    errors.push(`Proxy ${proxyIndex}: Invalid JSON`);
+                }
+            } else {
+                console.log(`Proxy ${proxyIndex} returned status ${response.status}`);
+                errors.push(`Proxy ${proxyIndex}: HTTP ${response.status}`);
             }
         } catch (error) {
-            console.log(`Proxy ${proxyIndex} failed:`, error.message);
+            const errorMsg = error.name === 'AbortError' ? 'Timeout' : error.message;
+            console.log(`Proxy ${proxyIndex} failed:`, errorMsg);
+            errors.push(`Proxy ${proxyIndex}: ${errorMsg}`);
         }
     }
     
-    throw new Error('All proxies failed');
+    throw new Error(`All proxies failed: ${errors.join(', ')}`);
 }
 
 // Fetch quote data for a single stock
@@ -158,12 +177,71 @@ function getPeriodParams(period) {
     return params[period] || params['1M'];
 }
 
+// Get price from chart API as fallback
+async function getPriceFromChart(symbol) {
+    try {
+        const url = `${YAHOO_CHART_URL}/${symbol}?range=1d&interval=1m`;
+        const data = await fetchWithProxy(url);
+        
+        if (data.chart && data.chart.result && data.chart.result.length > 0) {
+            const result = data.chart.result[0];
+            const meta = result.meta || {};
+            const quotes = result.indicators?.quote?.[0] || {};
+            const closes = quotes.close || [];
+            
+            // Get the last valid price
+            let lastPrice = meta.regularMarketPrice;
+            if (!lastPrice) {
+                for (let i = closes.length - 1; i >= 0; i--) {
+                    if (closes[i] !== null && closes[i] !== undefined) {
+                        lastPrice = closes[i];
+                        break;
+                    }
+                }
+            }
+            
+            if (lastPrice) {
+                return {
+                    price: lastPrice,
+                    prevClose: meta.previousClose || meta.chartPreviousClose,
+                    name: meta.shortName || meta.longName || symbol,
+                    symbol: meta.symbol || symbol
+                };
+            }
+        }
+    } catch (error) {
+        console.log(`Chart API fallback failed for ${symbol}:`, error.message);
+    }
+    return null;
+}
+
 // Update stock data from API
 async function updateStockFromAPI(symbol) {
-    const quote = await fetchStockQuote(symbol);
+    let quote = await fetchStockQuote(symbol);
+    
+    // If quote API fails, try getting price from chart API
+    if (!quote || !quote.regularMarketPrice) {
+        console.log(`Quote API failed for ${symbol}, trying chart API...`);
+        const chartPrice = await getPriceFromChart(symbol);
+        
+        if (chartPrice) {
+            // Create a minimal quote object from chart data
+            quote = quote || {};
+            quote.regularMarketPrice = chartPrice.price;
+            quote.regularMarketPreviousClose = chartPrice.prevClose;
+            quote.shortName = quote.shortName || chartPrice.name;
+            quote.symbol = quote.symbol || chartPrice.symbol;
+            
+            if (chartPrice.prevClose) {
+                quote.regularMarketChange = chartPrice.price - chartPrice.prevClose;
+                quote.regularMarketChangePercent = ((chartPrice.price - chartPrice.prevClose) / chartPrice.prevClose) * 100;
+            }
+            console.log(`Got price from chart API for ${symbol}:`, chartPrice.price);
+        }
+    }
     
     if (!quote) {
-        console.log(`Could not fetch data for ${symbol}, using cached data`);
+        console.log(`Could not fetch data for ${symbol} from any source`);
         return null;
     }
     

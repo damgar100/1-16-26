@@ -90,49 +90,66 @@ async function openStockPanel(ticker) {
     document.querySelector('.price-value').textContent = '...';
     document.querySelector('.price-change').textContent = '';
     
-    // Try to fetch real data from API
-    let stock = null;
-    
-    try {
-        stock = await updateStockFromAPI(ticker);
-    } catch (error) {
-        console.error('Error fetching stock data:', error);
-    }
-    
-    // Fall back to cached data if API fails
-    if (!stock) {
-        stock = stockDetails[ticker];
-    }
-    
-    // If still no data, try to find basic info
-    if (!stock) {
-        let basicStock = null;
-        let sectorName = '';
-        sp500Data.children.forEach(sector => {
-            sector.children.forEach(s => {
-                if (s.ticker === ticker) {
-                    basicStock = s;
-                    sectorName = sector.name;
-                }
-            });
+    // First, get basic info from sp500Data (always available)
+    let basicStock = null;
+    let sectorName = '';
+    sp500Data.children.forEach(sector => {
+        sector.children.forEach(s => {
+            if (s.ticker === ticker) {
+                basicStock = s;
+                sectorName = sector.name;
+            }
         });
+    });
+    
+    // Start with cached stockDetails if available
+    let stock = stockDetails[ticker] ? { ...stockDetails[ticker] } : null;
+    
+    // Try to fetch real data from API (with timeout)
+    try {
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('API timeout')), 5000)
+        );
+        const apiPromise = updateStockFromAPI(ticker);
+        const apiData = await Promise.race([apiPromise, timeoutPromise]);
         
-        if (basicStock) {
-            // Create minimal stock object from basic data
-            stock = {
-                ticker: basicStock.ticker,
-                name: basicStock.name,
-                sector: sectorName,
-                currentPrice: basicStock.currentPrice || 0,
-                change: basicStock.change || 0,
-                changePercent: basicStock.change || 0,
-                marketCap: basicStock.marketCap * 1000000000,
-                priceHistory: {}
-            };
-        } else {
-            document.querySelector('.stock-name-full').textContent = 'Data not available';
-            return;
+        if (apiData && apiData.currentPrice) {
+            stock = apiData;
+            console.log('Using API data for', ticker);
         }
+    } catch (error) {
+        console.log('API fetch failed for', ticker, '- using fallback:', error.message);
+    }
+    
+    // If API failed and no cached stockDetails, create from basic data
+    if (!stock && basicStock) {
+        stock = {
+            ticker: basicStock.ticker,
+            name: basicStock.name,
+            sector: sectorName,
+            currentPrice: basicStock.currentPrice || null,
+            change: basicStock.change || 0,
+            changePercent: basicStock.change || 0,
+            marketCap: basicStock.marketCap ? basicStock.marketCap * 1000000000 : null,
+            priceHistory: {}
+        };
+        console.log('Using basic sp500Data for', ticker);
+    }
+    
+    // Merge basic info if we have it (for sector info, etc.)
+    if (stock && basicStock) {
+        stock.sector = stock.sector || sectorName;
+        stock.name = stock.name || basicStock.name;
+        // Use basic data price if API didn't return one
+        if (!stock.currentPrice && basicStock.currentPrice) {
+            stock.currentPrice = basicStock.currentPrice;
+        }
+    }
+    
+    if (!stock) {
+        document.querySelector('.stock-name-full').textContent = 'Data not available';
+        document.querySelector('.price-value').textContent = 'N/A';
+        return;
     }
     
     currentStock = stock;
