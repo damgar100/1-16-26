@@ -209,7 +209,51 @@ async function openStockPanel(ticker) {
         }
     });
     
-    // Fetch and draw chart with real data
+    // First fetch 1D chart to get current price, then display 1M chart
+    // This ensures we have the latest price even if quote API fails
+    try {
+        const intradayData = await fetchChartForPeriod(stock.ticker, '1D');
+        if (intradayData && intradayData.length > 0) {
+            // Get current price from latest intraday data
+            const lastPoint = intradayData[intradayData.length - 1];
+            const firstPoint = intradayData[0];
+            
+            if (lastPoint && lastPoint.price > 0) {
+                const currentPrice = lastPoint.price;
+                const prevClose = firstPoint.price; // Approximation
+                
+                // Update spot price display
+                const priceEl = document.querySelector('.price-value');
+                const priceChangeEl = document.querySelector('.price-change');
+                const currentText = priceEl.textContent;
+                
+                if (currentText === 'Price unavailable' || currentText === '...' || currentText === 'N/A' || currentText === '$0.00') {
+                    const change = currentPrice - prevClose;
+                    const changePercent = ((currentPrice - prevClose) / prevClose) * 100;
+                    
+                    priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+                    const changeSign = change >= 0 ? '+' : '';
+                    priceChangeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+                    priceChangeEl.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+                    
+                    // Update currentStock
+                    currentStock.currentPrice = currentPrice;
+                    currentStock.change = change;
+                    currentStock.changePercent = changePercent;
+                    
+                    console.log('Updated spot price from 1D chart:', currentPrice);
+                }
+            }
+            
+            // Store intraday data
+            if (!currentStock.priceHistory) currentStock.priceHistory = {};
+            currentStock.priceHistory['1D'] = intradayData;
+        }
+    } catch (error) {
+        console.log('Could not fetch intraday data for spot price:', error.message);
+    }
+    
+    // Now fetch and draw the 1M chart
     await loadAndDrawChart(stock.ticker, '1M');
     
     // Resize treemap after animation
@@ -236,6 +280,44 @@ function closeStockPanel() {
     }, 350);
 }
 
+// Update spot price from chart data
+function updateSpotPriceFromChart(chartData) {
+    if (!chartData || chartData.length === 0) return;
+    
+    const priceEl = document.querySelector('.price-value');
+    const priceChangeEl = document.querySelector('.price-change');
+    
+    // Get current price (last data point) and starting price (first data point)
+    const lastPoint = chartData[chartData.length - 1];
+    const firstPoint = chartData[0];
+    
+    if (lastPoint && lastPoint.price > 0) {
+        const currentPrice = lastPoint.price;
+        const startPrice = firstPoint.price;
+        const change = currentPrice - startPrice;
+        const changePercent = ((currentPrice - startPrice) / startPrice) * 100;
+        
+        // Only update if price is currently showing "unavailable" or "..."
+        const currentText = priceEl.textContent;
+        if (currentText === 'Price unavailable' || currentText === '...' || currentText === 'N/A') {
+            priceEl.textContent = `$${currentPrice.toFixed(2)}`;
+            
+            const changeSign = change >= 0 ? '+' : '';
+            priceChangeEl.textContent = `${changeSign}${change.toFixed(2)} (${changeSign}${changePercent.toFixed(2)}%)`;
+            priceChangeEl.className = `price-change ${change >= 0 ? 'positive' : 'negative'}`;
+            
+            console.log('Updated spot price from chart data:', currentPrice);
+            
+            // Also update currentStock
+            if (currentStock) {
+                currentStock.currentPrice = currentPrice;
+                currentStock.change = change;
+                currentStock.changePercent = changePercent;
+            }
+        }
+    }
+}
+
 // Load chart data from API and draw
 async function loadAndDrawChart(ticker, period) {
     const chartContainer = document.getElementById('stock-chart');
@@ -252,6 +334,12 @@ async function loadAndDrawChart(ticker, period) {
                 if (!currentStock.priceHistory) currentStock.priceHistory = {};
                 currentStock.priceHistory[period] = chartData;
             }
+            
+            // Update spot price from chart if needed (for 1D period, use actual current price)
+            if (period === '1D') {
+                updateSpotPriceFromChart(chartData);
+            }
+            
             drawChartFromData(chartData, period);
         } else {
             // Fall back to stored data if available
