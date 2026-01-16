@@ -251,10 +251,45 @@ body {
 .data-status.loading { background: rgba(241, 196, 15, 0.2); color: #f1c40f; }
 .data-status.live { background: rgba(46, 204, 113, 0.2); color: #2ecc71; }
 .data-status.offline { background: rgba(231, 76, 60, 0.2); color: #e74c3c; }
+.data-status.refreshing { background: rgba(52, 152, 219, 0.2); color: #3498db; }
 
 .last-updated {
     font-size: 11px;
     color: #666;
+}
+
+.refresh-btn {
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #333;
+    border-radius: 6px;
+    background: transparent;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.refresh-btn:hover {
+    border-color: #3498db;
+    color: #3498db;
+}
+
+.refresh-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.refresh-btn svg {
+    width: 14px;
+    height: 14px;
+}
+
+.refresh-btn.spinning svg {
+    animation: spin 1s linear infinite;
 }
 
 .quick-stats-panel {
@@ -621,11 +656,18 @@ body {
             <div class="shortcuts-tooltip">
                 <div class="shortcut-item"><kbd>G</kbd> <span>Top Gainers</span></div>
                 <div class="shortcut-item"><kbd>L</kbd> <span>Top Losers</span></div>
+                <div class="shortcut-item"><kbd>R</kbd> <span>Refresh Data</span></div>
                 <div class="shortcut-item"><kbd>/</kbd> <span>Search</span></div>
                 <div class="shortcut-item"><kbd>Esc</kbd> <span>Close panel</span></div>
             </div>
         </div>
         <div class="data-status-container">
+            <button class="refresh-btn" id="refresh-btn" title="Fetch latest stock data">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+                </svg>
+                Refresh Data
+            </button>
             <span class="data-status loading" id="data-status">Loading...</span>
             <span class="last-updated" id="last-updated"></span>
         </div>
@@ -1060,6 +1102,7 @@ function initKeyboardShortcuts() {
         switch(e.key.toLowerCase()) {
             case 'g': showQuickStats('gainers'); break;
             case 'l': showQuickStats('losers'); break;
+            case 'r': refreshData(); break;
             case '/':
                 e.preventDefault();
                 document.getElementById('stock-search')?.focus();
@@ -1069,6 +1112,77 @@ function initKeyboardShortcuts() {
                 break;
         }
     });
+}
+
+// Refresh data from server
+let isRefreshing = false;
+
+async function refreshData() {
+    if (isRefreshing) return;
+    
+    const btn = document.getElementById('refresh-btn');
+    const statusEl = document.getElementById('data-status');
+    
+    isRefreshing = true;
+    btn.disabled = true;
+    btn.classList.add('spinning');
+    statusEl.textContent = 'Refreshing...';
+    statusEl.className = 'data-status refreshing';
+    
+    try {
+        // Start the refresh
+        const startRes = await fetch('/api/refresh');
+        const startData = await startRes.json();
+        
+        if (startData.status === 'started' || startData.status === 'already_running') {
+            // Poll for status
+            await pollRefreshStatus();
+        }
+        
+        // Reload the data
+        await loadData();
+        
+    } catch (error) {
+        console.error('Refresh failed:', error);
+        statusEl.textContent = 'Refresh failed';
+        statusEl.className = 'data-status offline';
+        
+        // Show helpful message if server not running
+        if (error.message.includes('Failed to fetch')) {
+            alert('Server not running. Start with: python3 server.py');
+        }
+    } finally {
+        isRefreshing = false;
+        btn.disabled = false;
+        btn.classList.remove('spinning');
+    }
+}
+
+async function pollRefreshStatus() {
+    const statusEl = document.getElementById('data-status');
+    
+    while (true) {
+        await new Promise(r => setTimeout(r, 500));
+        
+        try {
+            const res = await fetch('/api/status');
+            const status = await res.json();
+            
+            if (status.is_refreshing) {
+                statusEl.textContent = status.message || 'Refreshing...';
+            } else {
+                statusEl.textContent = status.message || 'Done';
+                break;
+            }
+        } catch (e) {
+            break;
+        }
+    }
+}
+
+function initRefreshButton() {
+    const btn = document.getElementById('refresh-btn');
+    btn?.addEventListener('click', refreshData);
 }
 
 // Market hours / raccoon
@@ -1101,6 +1215,7 @@ window.addEventListener('resize', function() {
 // Initialize
 updateRaccoon();
 setInterval(updateRaccoon, 60000);
+initRefreshButton();
 loadData();
     </script>
 </body>
