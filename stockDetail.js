@@ -28,15 +28,15 @@ function initSearch() {
         }
         
         searchResults.innerHTML = matches.map(stock => {
-            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
-            const changeSign = stock.change >= 0 ? '+' : '';
+            const changeClass = stock.change === null ? '' : (stock.change >= 0 ? 'positive' : 'negative');
+            const changeText = stock.change === null ? '—' : `${stock.change >= 0 ? '+' : ''}${stock.change.toFixed(2)}%`;
             return `
                 <div class="search-result-item" data-ticker="${stock.ticker}">
                     <div>
                         <span class="search-result-ticker">${stock.ticker}</span>
                         <span class="search-result-name">${stock.name}</span>
                     </div>
-                    <span class="search-result-change ${changeClass}">${changeSign}${stock.change.toFixed(2)}%</span>
+                    <span class="search-result-change ${changeClass}">${changeText}</span>
                 </div>
             `;
         }).join('');

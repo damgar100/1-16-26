@@ -20,6 +20,51 @@ const apiCache = {
 
 const CACHE_DURATION = 300000; // 5 minute cache (increased for reliability)
 
+// Data status tracking
+const dataStatus = {
+    lastUpdate: null,
+    successCount: 0,
+    failCount: 0,
+    totalStocks: 0,
+    isLive: false,
+    isLoading: true
+};
+
+// Ticker normalization for Yahoo Finance API
+// Yahoo uses periods for share classes (BRK.B), but we store with hyphens (BRK-B)
+function normalizeTickerForAPI(ticker) {
+    return ticker.replace('-', '.');
+}
+
+function normalizeTickerFromAPI(apiTicker) {
+    return apiTicker.replace('.', '-');
+}
+
+// Update data status UI indicator
+function updateDataStatusUI() {
+    const statusEl = document.getElementById('data-status');
+    if (!statusEl) return;
+    
+    if (dataStatus.isLoading && dataStatus.successCount === 0) {
+        statusEl.textContent = 'Loading...';
+        statusEl.className = 'data-status loading';
+    } else if (dataStatus.isLive && dataStatus.successCount > 0) {
+        const minutesAgo = Math.floor((Date.now() - dataStatus.lastUpdate) / 60000);
+        if (minutesAgo < 1) {
+            statusEl.textContent = 'Live';
+        } else {
+            statusEl.textContent = `Updated ${minutesAgo}m ago`;
+        }
+        statusEl.className = 'data-status live';
+    } else if (dataStatus.successCount > 0 && dataStatus.failCount > 0) {
+        statusEl.textContent = `${dataStatus.successCount}/${dataStatus.totalStocks} loaded`;
+        statusEl.className = 'data-status partial';
+    } else if (dataStatus.failCount > 0 && dataStatus.successCount === 0) {
+        statusEl.textContent = 'Data unavailable';
+        statusEl.className = 'data-status offline';
+    }
+}
+
 // Try fetching with different proxies
 async function fetchWithProxy(url) {
     const errors = [];
@@ -80,7 +125,9 @@ async function fetchStockQuote(symbol) {
     }
     
     try {
-        const url = `${YAHOO_QUOTE_URL}?symbols=${symbol}`;
+        // Normalize ticker for Yahoo API
+        const apiSymbol = normalizeTickerForAPI(symbol);
+        const url = `${YAHOO_QUOTE_URL}?symbols=${apiSymbol}`;
         const data = await fetchWithProxy(url);
         
         console.log(`API response for ${symbol}:`, data);
@@ -102,7 +149,16 @@ async function fetchStockQuote(symbol) {
 
 // Fetch quotes for multiple stocks
 async function fetchMultipleQuotes(symbols) {
-    const symbolList = symbols.join(',');
+    // Normalize tickers for Yahoo API (BRK-B -> BRK.B)
+    const tickerMap = {};
+    const apiSymbols = symbols.map(ticker => {
+        const apiTicker = normalizeTickerForAPI(ticker);
+        tickerMap[apiTicker] = ticker; // Map API ticker back to our format
+        tickerMap[ticker] = ticker; // Also map original
+        return apiTicker;
+    });
+    
+    const symbolList = apiSymbols.join(',');
     
     try {
         const url = `${YAHOO_QUOTE_URL}?symbols=${symbolList}`;
@@ -111,9 +167,11 @@ async function fetchMultipleQuotes(symbols) {
         if (data.quoteResponse && data.quoteResponse.result) {
             const quotes = {};
             data.quoteResponse.result.forEach(quote => {
-                quotes[quote.symbol] = quote;
-                apiCache.quotes[quote.symbol] = quote;
-                apiCache.lastUpdate[`quote_${quote.symbol}`] = Date.now();
+                // Map back to our ticker format (BRK.B -> BRK-B)
+                const originalTicker = tickerMap[quote.symbol] || normalizeTickerFromAPI(quote.symbol);
+                quotes[originalTicker] = quote;
+                apiCache.quotes[originalTicker] = quote;
+                apiCache.lastUpdate[`quote_${originalTicker}`] = Date.now();
             });
             return quotes;
         }
@@ -135,7 +193,9 @@ async function fetchStockChart(symbol, range = '1mo', interval = '1d') {
     }
     
     try {
-        const url = `${YAHOO_CHART_URL}/${symbol}?range=${range}&interval=${interval}`;
+        // Normalize ticker for Yahoo API
+        const apiSymbol = normalizeTickerForAPI(symbol);
+        const url = `${YAHOO_CHART_URL}/${apiSymbol}?range=${range}&interval=${interval}`;
         const data = await fetchWithProxy(url);
         
         if (data.chart && data.chart.result && data.chart.result.length > 0) {
@@ -180,7 +240,8 @@ function getPeriodParams(period) {
 // Get price from chart API as fallback
 async function getPriceFromChart(symbol) {
     try {
-        const url = `${YAHOO_CHART_URL}/${symbol}?range=1d&interval=1m`;
+        const apiSymbol = normalizeTickerForAPI(symbol);
+        const url = `${YAHOO_CHART_URL}/${apiSymbol}?range=1d&interval=1m`;
         const data = await fetchWithProxy(url);
         
         if (data.chart && data.chart.result && data.chart.result.length > 0) {
@@ -257,7 +318,7 @@ async function updateStockFromAPI(symbol) {
     
     // Create or update stockDetails entry
     const stockData = {
-        ticker: quote.symbol || symbol,
+        ticker: symbol, // Use our normalized ticker
         name: quote.shortName || quote.longName || quote.displayName || symbol,
         sector: quote.sector || 'Unknown',
         currentPrice: quote.regularMarketPrice || price,
@@ -319,6 +380,12 @@ async function fetchChartForPeriod(symbol, period) {
 async function updateTreemapWithRealData() {
     console.log('Fetching real-time stock data...');
     
+    // Reset data status
+    dataStatus.isLoading = true;
+    dataStatus.successCount = 0;
+    dataStatus.failCount = 0;
+    updateDataStatusUI();
+    
     // Get all tickers from sp500Data
     const allTickers = [];
     sp500Data.children.forEach(sector => {
@@ -326,6 +393,8 @@ async function updateTreemapWithRealData() {
             allTickers.push(stock.ticker);
         });
     });
+    
+    dataStatus.totalStocks = allTickers.length;
     
     // Fetch in batches of 20 (Yahoo Finance limit)
     const batchSize = 20;
@@ -343,20 +412,41 @@ async function updateTreemapWithRealData() {
             sector.children.forEach(stock => {
                 if (quotes[stock.ticker]) {
                     const quote = quotes[stock.ticker];
-                    stock.change = quote.regularMarketChangePercent || stock.change;
-                    stock.marketCap = quote.marketCap ? quote.marketCap / 1000000000 : stock.marketCap;
+                    // Only update if we got valid data
+                    if (quote.regularMarketChangePercent !== undefined && quote.regularMarketChangePercent !== null) {
+                        stock.change = quote.regularMarketChangePercent;
+                        dataStatus.successCount++;
+                    } else {
+                        dataStatus.failCount++;
+                    }
+                    if (quote.marketCap) {
+                        stock.marketCap = quote.marketCap / 1000000000;
+                    }
                     stock.currentPrice = quote.regularMarketPrice;
+                } else {
+                    // Stock not returned in response - mark as failed
+                    if (batch.includes(stock.ticker)) {
+                        dataStatus.failCount++;
+                    }
                 }
             });
         });
+        
+        // Update status after each batch
+        dataStatus.lastUpdate = Date.now();
+        dataStatus.isLive = dataStatus.successCount > 0;
+        updateDataStatusUI();
     }
+    
+    dataStatus.isLoading = false;
+    updateDataStatusUI();
     
     // Reinitialize treemap with new data
     if (typeof initTreemap === 'function') {
         initTreemap();
     }
     
-    console.log('Stock data updated!');
+    console.log(`Stock data updated! ${dataStatus.successCount} loaded, ${dataStatus.failCount} failed`);
 }
 
 // Fetch index data (S&P 500 and NASDAQ)
@@ -471,4 +561,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateIndexTrackers();
         updateTreemapWithRealData();
     }, 300000);
+    
+    // Update the "X minutes ago" display every minute
+    setInterval(updateDataStatusUI, 60000);
 });

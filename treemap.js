@@ -2,6 +2,10 @@
 
 // Color scale for performance
 function getColor(change) {
+    // Return gray for null/undefined (no data loaded)
+    if (change === null || change === undefined) {
+        return '#444';
+    }
     if (change >= 3) return '#0d5f2a';
     if (change >= 2) return '#1a8f3e';
     if (change >= 1) return '#2ecc71';
@@ -24,6 +28,9 @@ function formatMarketCap(value) {
 
 // Format percentage change
 function formatChange(change) {
+    if (change === null || change === undefined) {
+        return '—';
+    }
     const sign = change >= 0 ? '+' : '';
     return `${sign}${change.toFixed(2)}%`;
 }
@@ -95,8 +102,9 @@ function initTreemap() {
     const nodes = svg.selectAll('g.node')
         .data(root.leaves())
         .join('g')
-        .attr('class', 'node')
-        .attr('transform', d => `translate(${d.x0},${d.y0})`);
+        .attr('class', d => `node ${d.data.change === null ? 'no-data' : ''}`)
+        .attr('transform', d => `translate(${d.x0},${d.y0})`)
+        .attr('data-ticker', d => d.data.ticker);
     
     // Add rectangles
     nodes.append('rect')
@@ -132,8 +140,8 @@ function initTreemap() {
         .each(function(d) {
             const nodeWidth = d.x1 - d.x0;
             const nodeHeight = d.y1 - d.y0;
-            // Hide text if node is too small
-            if (nodeWidth < 45 || nodeHeight < 35) {
+            // Hide text if node is too small or no data
+            if (nodeWidth < 45 || nodeHeight < 35 || d.data.change === null) {
                 d3.select(this).style('display', 'none');
             }
             // Adjust font size based on node size
@@ -145,7 +153,8 @@ function initTreemap() {
     nodes
         .on('mouseenter', function(event, d) {
             tooltip.classed('visible', true);
-            const changeClass = d.data.change >= 0 ? 'positive' : 'negative';
+            const changeClass = d.data.change === null ? '' : (d.data.change >= 0 ? 'positive' : 'negative');
+            const changeText = d.data.change === null ? 'Data unavailable' : formatChange(d.data.change);
             tooltip.html(`
                 <div class="company-name">${d.data.name}</div>
                 <div class="info-row">
@@ -162,7 +171,7 @@ function initTreemap() {
                 </div>
                 <div class="info-row">
                     <span class="label">Change:</span>
-                    <span class="value ${changeClass}">${formatChange(d.data.change)}</span>
+                    <span class="value ${changeClass}">${changeText}</span>
                 </div>
             `);
         })
@@ -189,8 +198,140 @@ function initTreemap() {
         });
 }
 
+// Get all stocks as flat array
+function getAllStocks() {
+    const stocks = [];
+    sp500Data.children.forEach(sector => {
+        sector.children.forEach(stock => {
+            stocks.push({ ...stock, sector: sector.name });
+        });
+    });
+    return stocks;
+}
+
+// Get top gainers/losers (only stocks with loaded data)
+function getTopMovers(type = 'gainers', limit = 10) {
+    const allStocks = getAllStocks().filter(stock => stock.change !== null);
+    
+    if (allStocks.length === 0) {
+        return [];
+    }
+    
+    allStocks.sort((a, b) => type === 'gainers' ? b.change - a.change : a.change - b.change);
+    return allStocks.slice(0, limit);
+}
+
+// Show quick stats panel
+function showQuickStats(type) {
+    const panel = document.getElementById('quick-stats-panel');
+    const title = document.getElementById('quick-stats-title');
+    const list = document.getElementById('quick-stats-list');
+    
+    const movers = getTopMovers(type);
+    
+    title.textContent = type === 'gainers' ? 'Top Gainers' : 'Top Losers';
+    title.className = type;
+    
+    if (movers.length === 0) {
+        list.innerHTML = '<div class="quick-stats-empty">Loading stock data...</div>';
+    } else {
+        list.innerHTML = movers.map(stock => {
+            const changeClass = stock.change >= 0 ? 'positive' : 'negative';
+            const sign = stock.change >= 0 ? '+' : '';
+            return `
+                <div class="quick-stats-item" data-ticker="${stock.ticker}">
+                    <div class="quick-stats-stock">
+                        <span class="quick-stats-ticker">${stock.ticker}</span>
+                        <span class="quick-stats-name">${stock.name}</span>
+                    </div>
+                    <span class="quick-stats-change ${changeClass}">${sign}${stock.change.toFixed(2)}%</span>
+                </div>
+            `;
+        }).join('');
+        
+        // Add click handlers
+        list.querySelectorAll('.quick-stats-item').forEach(item => {
+            item.addEventListener('click', function() {
+                const ticker = this.dataset.ticker;
+                if (typeof openStockPanel === 'function') {
+                    openStockPanel(ticker);
+                }
+                panel.classList.remove('visible');
+            });
+        });
+    }
+    
+    panel.classList.add('visible');
+}
+
+// Initialize quick stats buttons
+function initQuickStats() {
+    const gainersBtn = document.getElementById('show-gainers');
+    const losersBtn = document.getElementById('show-losers');
+    const closeBtn = document.querySelector('.quick-stats-close');
+    const panel = document.getElementById('quick-stats-panel');
+    
+    if (gainersBtn) {
+        gainersBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showQuickStats('gainers');
+        });
+    }
+    if (losersBtn) {
+        losersBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showQuickStats('losers');
+        });
+    }
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => panel.classList.remove('visible'));
+    }
+    
+    // Close panel when clicking outside
+    document.addEventListener('click', function(e) {
+        if (panel && !panel.contains(e.target) && 
+            e.target !== gainersBtn && e.target !== losersBtn &&
+            !e.target.closest('.stats-btn')) {
+            panel.classList.remove('visible');
+        }
+    });
+}
+
+// Initialize keyboard shortcuts
+function initKeyboardShortcuts() {
+    document.addEventListener('keydown', function(e) {
+        // Don't trigger if typing in input
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        
+        switch(e.key.toLowerCase()) {
+            case 'g':
+                showQuickStats('gainers');
+                break;
+            case 'l':
+                showQuickStats('losers');
+                break;
+            case '/':
+                e.preventDefault();
+                document.getElementById('stock-search')?.focus();
+                break;
+            case 'escape':
+                // Close any open panels
+                document.getElementById('quick-stats-panel')?.classList.remove('visible');
+                if (typeof closeStockPanel === 'function') {
+                    const panel = document.getElementById('stock-panel');
+                    if (panel && panel.classList.contains('visible')) {
+                        closeStockPanel();
+                    }
+                }
+                break;
+        }
+    });
+}
+
 // Initialize on load
 initTreemap();
+initQuickStats();
+initKeyboardShortcuts();
 
 // Resize handler
 let resizeTimeout;
