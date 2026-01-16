@@ -6,7 +6,8 @@ function getColor(change) {
     if (change >= 2) return '#1a8f3e';
     if (change >= 1) return '#2ecc71';
     if (change >= 0.5) return '#58d68d';
-    if (change >= -0.5) return '#555';
+    if (change >= 0) return '#8fe0ac';
+    if (change >= -0.5) return '#f5a8a2';
     if (change >= -1) return '#e67e73';
     if (change >= -2) return '#e74c3c';
     if (change >= -3) return '#c0392b';
