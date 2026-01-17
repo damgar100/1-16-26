@@ -216,12 +216,21 @@ def fetch_stock_data():
             "children": []
         }
         
+        # Fetch index data fresh for real-time accuracy
         for idx in INDICES:
-            if idx in results:
-                output["indices"][idx] = {
-                    "name": "S&P 500" if idx == "SPY" else "NASDAQ 100",
-                    "changePercent": round(results[idx]['change'], 2)
-                }
+            try:
+                ticker = yf.Ticker(idx)
+                info = ticker.fast_info
+                price = info.get('lastPrice')
+                prev = info.get('previousClose')
+                if price and prev:
+                    change_pct = ((price - prev) / prev) * 100
+                    output["indices"][idx] = {
+                        "name": "S&P 500" if idx == "SPY" else "NASDAQ 100",
+                        "changePercent": round(change_pct, 2)
+                    }
+            except Exception:
+                pass
         
         for sector_name, stocks in SP500_STOCKS.items():
             sector = {"name": sector_name, "children": []}

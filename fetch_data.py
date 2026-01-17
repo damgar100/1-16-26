@@ -194,14 +194,23 @@ def main():
         "children": []
     }
     
-    # Add index data
+    # Add index data (fetch fresh from fast_info for real-time accuracy)
+    print("\nFetching index data...")
     for idx in INDICES:
-        if idx in results:
-            output["indices"][idx] = {
-                "name": "S&P 500" if idx == "SPY" else "NASDAQ 100",
-                "changePercent": round(results[idx]['change'], 2)
-            }
-            print(f"  {idx}: {results[idx]['change']:+.2f}%")
+        try:
+            ticker = yf.Ticker(idx)
+            info = ticker.fast_info
+            price = info.get('lastPrice')
+            prev = info.get('previousClose')
+            if price and prev:
+                change_pct = ((price - prev) / prev) * 100
+                output["indices"][idx] = {
+                    "name": "S&P 500" if idx == "SPY" else "NASDAQ 100",
+                    "changePercent": round(change_pct, 2)
+                }
+                print(f"  {idx}: ${price:.2f} ({change_pct:+.2f}%)")
+        except Exception as e:
+            print(f"  {idx}: Error - {e}")
     
     # Add sector data
     success = 0
