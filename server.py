@@ -156,10 +156,10 @@ def fetch_stock_data():
         tickers_str = ' '.join(all_tickers)
         data = yf.download(tickers_str, period='5d', group_by='ticker', progress=False, threads=True)
         
-        refresh_status["progress"] = 50
-        refresh_status["message"] = "Processing data..."
+        refresh_status["progress"] = 40
+        refresh_status["message"] = "Processing price data..."
         
-        # Process results
+        # Process price results
         results = {}
         for yf_ticker in all_tickers:
             try:
@@ -178,11 +178,34 @@ def fetch_stock_data():
                         results[yf_ticker] = {
                             'price': float(current_price),
                             'change': float(change_pct),
+                            'marketCap': 0
                         }
             except Exception:
                 pass
         
-        refresh_status["progress"] = 80
+        refresh_status["progress"] = 60
+        refresh_status["message"] = "Fetching market caps..."
+        
+        # Fetch market caps (need to do this separately)
+        stock_tickers = [t for t in all_tickers if t not in INDICES]
+        for i, yf_ticker in enumerate(stock_tickers):
+            if yf_ticker in results:
+                try:
+                    ticker = yf.Ticker(yf_ticker)
+                    info = ticker.fast_info
+                    market_cap = info.get('marketCap', 0)
+                    if market_cap:
+                        results[yf_ticker]['marketCap'] = market_cap / 1e9  # Convert to billions
+                except Exception:
+                    pass
+            
+            # Update progress every 20 stocks
+            if i % 20 == 0:
+                pct = 60 + int((i / len(stock_tickers)) * 20)
+                refresh_status["progress"] = pct
+                refresh_status["message"] = f"Fetching market caps... {i}/{len(stock_tickers)}"
+        
+        refresh_status["progress"] = 85
         refresh_status["message"] = "Building output..."
         
         # Build output
@@ -209,7 +232,7 @@ def fetch_stock_data():
                     sector["children"].append({
                         "ticker": orig_ticker,
                         "name": name,
-                        "marketCap": 100,
+                        "marketCap": round(r.get('marketCap', 10), 2),
                         "price": round(r['price'], 2),
                         "change": round(r['change'], 2)
                     })
@@ -217,7 +240,7 @@ def fetch_stock_data():
                     sector["children"].append({
                         "ticker": orig_ticker,
                         "name": name,
-                        "marketCap": 50,
+                        "marketCap": 10,
                         "price": None,
                         "change": None
                     })

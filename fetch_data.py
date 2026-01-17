@@ -139,7 +139,7 @@ def main():
     tickers_str = ' '.join(all_tickers)
     data = yf.download(tickers_str, period='5d', group_by='ticker', progress=True, threads=True)
     
-    # Process results
+    # Process price results
     results = {}
     for yf_ticker in all_tickers:
         try:
@@ -160,12 +160,31 @@ def main():
                     results[yf_ticker] = {
                         'price': float(current_price),
                         'change': float(change_pct),
-                        'prev_close': float(prev_close)
+                        'marketCap': 0
                     }
         except Exception as e:
             print(f"  Error processing {yf_ticker}: {e}")
     
-    print(f"\nProcessed {len(results)} tickers successfully")
+    print(f"\nProcessed {len(results)} price records")
+    
+    # Fetch market caps
+    print("Fetching market caps...")
+    stock_tickers = [t for t in all_tickers if t not in INDICES]
+    for i, yf_ticker in enumerate(stock_tickers):
+        if yf_ticker in results:
+            try:
+                ticker = yf.Ticker(yf_ticker)
+                info = ticker.fast_info
+                market_cap = info.get('marketCap', 0)
+                if market_cap:
+                    results[yf_ticker]['marketCap'] = market_cap / 1e9  # Convert to billions
+            except Exception:
+                pass
+        
+        if (i + 1) % 50 == 0:
+            print(f"  {i + 1}/{len(stock_tickers)} market caps fetched...")
+    
+    print(f"Market caps fetched successfully")
     
     # Build output data structure
     output = {
@@ -199,7 +218,7 @@ def main():
                 sector["children"].append({
                     "ticker": orig_ticker,
                     "name": name,
-                    "marketCap": 100,  # Placeholder - would need separate API call for accurate market cap
+                    "marketCap": round(r.get('marketCap', 10), 2),
                     "price": round(r['price'], 2),
                     "change": round(r['change'], 2)
                 })
@@ -208,7 +227,7 @@ def main():
                 sector["children"].append({
                     "ticker": orig_ticker,
                     "name": name,
-                    "marketCap": 50,
+                    "marketCap": 10,
                     "price": None,
                     "change": None
                 })
