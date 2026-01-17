@@ -1,14 +1,14 @@
 {
   "name": "S&P 500",
-  "lastUpdated": "2026-01-16T16:13:00.116010",
+  "lastUpdated": "2026-01-16T16:15:30.622666",
   "indices": {
     "SPY": {
       "name": "S&P 500",
-      "changePercent": -0.15
+      "changePercent": -0.08
     },
     "QQQ": {
       "name": "NASDAQ 100",
-      "changePercent": -0.15
+      "changePercent": -0.08
     }
   },
   "children": [
